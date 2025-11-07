@@ -1,0 +1,530 @@
+body {
+  background: #f7f7fa;
+  font-family: "Tajawal", "Cairo", Arial, sans-serif;
+}
+
+/* السايدبار */
+.lawyer-sidebar, .sidebar, .sidebar-root {
+  background: #fff;
+  min-height: 100vh;
+  box-shadow: 2px 0 16px 0 rgba(44,44,44,0.06);
+  border-top-right-radius: 24px;
+  border-bottom-right-radius: 24px;
+  padding: 24px 0;
+}
+
+/* الهيدر */
+.laws-header-gold {
+  background: linear-gradient(90deg, #fff 60%, #f7f7fa 100%);
+  color: #222;
+  font-weight: bold;
+  box-shadow: 0 2px 12px #d4af3722;
+  border-radius: 0 0 18px 18px;
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  padding: 18px 0 12px 0;
+}
+
+/* تصنيفات القوانين */
+.laws-categories-gold {
+  background: #fff;
+  border: 1.5px solid #ececec;
+  box-shadow: 0 2px 12px #d4af3711;
+  border-radius: 16px;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: fit-content;
+}
+
+.laws-category-btn {
+  background: #fff;
+  border: 1.5px solid #ececec;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  color: #444;
+  text-align: right;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-weight: 500;
+}
+.laws-category-btn.active,
+.laws-category-btn:hover {
+  background: #f7f7fa;
+  color: #D4AF37;
+  border: 1.5px solid #D4AF37;
+}
+
+.laws-section-title {
+  color: #2563eb;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+}
+
+/* البطاقات */
+.law-card-gold {
+  border: 1.5px solid #ececec;
+  box-shadow: 0 2px 12px #d4af3711;
+  background: #fff;
+  transition: box-shadow 0.2s, transform 0.2s, border 0.2s;
+  min-width: 260px;
+  max-width: 320px;
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 18px 16px 12px 16px;
+}
+.law-card-gold:hover {
+  box-shadow: 0 6px 24px #2563eb22;
+  border: 1.5px solid #2563eb;
+  transform: translateY(-4px) scale(1.03);
+}
+
+.law-card-title {
+  font-weight: bold;
+  color: #2563eb;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.law-card-content {
+  color: #222;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.law-card-footer {
+  color: #888;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.laws-empty {
+  color: #888;
+  font-size: 1.1rem;
+  padding: 24px;
+  text-align: center;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed #ececec;
+}
+
+.laws-footer-gold {
+  background: #fff;
+  color: #222;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 -2px 12px #d4af3722;
+  font-weight: bold;
+  text-align: center;
+  padding: 14px 0 10px 0;
+  margin-top: 32px;
+}
+
+/* تحسينات عامة */
+.laws-main-content {
+  background: transparent;
+  display: flex;
+  flex: 1;
+  padding: 32px 0 0 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 32px;
+}
+.laws-cards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.laws-cards-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.laws-categories-title {
+  font-weight: bold;
+  color: #2563eb;
+  margin-bottom: 10px;
+  display: block;
+  font-size: 1.1rem;
+}
+.laws-categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.laws-category-icon {
+  font-size: 1.2em;
+}
+.laws-search-box input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #dbe2ef;
+  font-size: 1rem;
+  background: #f8fafc;
+  outline: none;
+  transition: border 0.2s;
+}
+.laws-search-box input:focus {
+  border-color: #2563eb;
+}
+
+/* السايدبار أيقونات */
+.lawyer-sidebar .MuiListItemIcon-root svg,
+.sidebar .MuiListItemIcon-root svg {
+  color: #D4AF37 !important;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .laws-main-content {
+    flex-direction: column;
+    gap: 0;
+    padding: 16px 0 0 0;
+  }
+  .laws-categories-gold {
+    width: 100%;
+    min-width: unset;
+    margin-bottom: 18px;
+  }
+  .laws-cards-list {
+    justify-content: center;
+  }
+}
+
+/* =============================
+   باقي التنسيقات الأساسية (شكاوى، مالية، إضافة محامي...)
+   ============================= */
+.complaints-list-page {
+  padding: 32px 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+  direction: rtl;
+}
+.complaints-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: #222;
+}
+.complaints-header-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+.complaints-btn-main {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+.complaints-btn-main:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+.complaints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 32px 24px;
+}
+.complaint-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px 0 rgba(0,0,0,0.06);
+  padding: 24px 18px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+}
+.complaint-card-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 8px;
+}
+.complaint-info {
+  color: #444;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+.complaint-summary {
+  color: #222;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+.complaints-btn-details {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.2s;
+}
+.complaints-btn-details:hover {
+  background: #1746a2;
+}
+
+/* المالية */
+.financial-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 28px 24px;
+  margin: 40px 0 32px 0;
+  direction: rtl;
+}
+.financial-card {
+  border-radius: 22px;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.09);
+  padding: 32px 28px 24px 28px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+.financial-card.red {
+  background: linear-gradient(120deg, #ff4669 60%, #ff7a7a 100%);
+}
+.financial-card.blue {
+  background: linear-gradient(120deg, #3b82f6 60%, #60a5fa 100%);
+}
+.financial-card.green {
+  background: linear-gradient(120deg, #22c55e 60%, #4ade80 100%);
+}
+.financial-card.purple {
+  background: linear-gradient(120deg, #6366f1 60%, #818cf8 100%);
+}
+.financial-card .icon {
+  font-size: 2.7rem;
+  margin-bottom: 12px;
+  opacity: 0.95;
+}
+.financial-card .title {
+  font-size: 1.15rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #fff;
+  opacity: 0.95;
+}
+.financial-card .value {
+  font-size: 2.1rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.financial-card .desc {
+  font-size: 1rem;
+  color: #f3f4f6;
+  margin-bottom: 10px;
+}
+.financial-card .progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 6px;
+  margin: 10px 0 0 0;
+  position: relative;
+}
+.financial-card .progress-bar {
+  height: 100%;
+  border-radius: 6px;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.financial-card.red .progress-bar { background: #fff; width: 60%; }
+.financial-card.blue .progress-bar { background: #fff; width: 75%; }
+.financial-card.green .progress-bar { background: #fff; width: 70%; }
+.financial-card.purple .progress-bar { background: #fff; width: 80%; }
+.financial-card .progress-label {
+  font-size: 0.95rem;
+  color: #f3f4f6;
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  opacity: 0.9;
+}
+.financial-table-container {
+  background: #fffbe9;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px 0 rgba(0,0,0,0.06);
+  padding: 32px 18px 24px 18px;
+  margin: 0 auto 40px auto;
+  max-width: 950px;
+  direction: rtl;
+}
+.financial-table-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #111;
+  margin-bottom: 18px;
+  text-align: right;
+}
+.financial-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  font-size: 1rem;
+  background: transparent;
+}
+.financial-table th, .financial-table td {
+  padding: 12px 14px;
+  text-align: right;
+}
+.financial-table th {
+  background: #f7e7b4;
+  color: #111;
+  font-weight: bold;
+  border-radius: 8px 8px 0 0;
+}
+.financial-table tr {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.04);
+}
+.financial-table td.status-complete {
+  color: #1e7d36;
+  font-weight: bold;
+  background: #e7f9ef;
+  border-radius: 8px;
+}
+.financial-table td.status-pending {
+  color: #bfa13a;
+  font-weight: bold;
+  background: #fff7e6;
+  border-radius: 8px;
+}
+.financial-table td.status-late {
+  color: #c0392b;
+  font-weight: bold;
+  background: #ffeaea;
+  border-radius: 8px;
+}
+.financial-table td.status-default {
+  color: #444;
+}
+.financial-table td.type-credit {
+  color: #2563eb;
+  font-weight: bold;
+}
+.financial-table td.type-debit {
+  color: #e11d48;
+  font-weight: bold;
+}
+
+/* إضافة محامي */
+.add-lawyer-container {
+  min-height: 100vh;
+  background: #f4f6fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.add-lawyer-form {
+  background: #fff;
+  padding: 32px 28px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+  width: 100%;
+  max-width: 420px;
+  direction: rtl;
+}
+.add-lawyer-form h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.form-group label {
+  margin-bottom: 6px;
+  color: #34495e;
+  font-size: 15px;
+  font-weight: 500;
+}
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group input[type="file"] {
+  padding: 10px 12px;
+  border: 1px solid #dbe2ef;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #f8fafc;
+  transition: border 0.2s;
+}
+.form-group input:focus {
+  border-color: #3f72af;
+  outline: none;
+}
+.image-preview {
+  margin-top: 10px;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #dbe2ef;
+}
+.add-lawyer-form button {
+  width: 100%;
+  padding: 12px;
+  background: #3f72af;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+.add-lawyer-form button:hover {
+  background: #2c3e50;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .laws-main-content {
+    flex-direction: column;
+    gap: 0;
+    padding: 16px 0 0 0;
+  }
+  .laws-categories-gold {
+    width: 100%;
+    min-width: unset;
+    margin-bottom: 18px;
+  }
+  .laws-cards-list {
+    justify-content: center;
+  }
+}
