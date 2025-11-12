@@ -94,12 +94,12 @@ export default function AdminDashboardHome() {
   const [openLawyerDialog, setOpenLawyerDialog] = useState(false);
 
   const [employeeForm, setEmployeeForm] = useState({
-    name: '', email: '', age: '', password: '', photo: null,
+    name: '', email: '', age: '', password: '', password_confirmation: '', photo: null, certificate: null
   });
   const [employeeImagePreview, setEmployeeImagePreview] = useState(null);
 
   const [lawyerForm, setLawyerForm] = useState({
-    name: '', email: '', age: '', password: '', specializations: [], photo: null,
+    name: '', email: '', age: '', password: '', password_confirmation: '', specialization_ids: [], photo: null,
   });
   const [lawyerImagePreview, setLawyerImagePreview] = useState(null);
 
@@ -137,12 +137,20 @@ export default function AdminDashboardHome() {
     setEmployeeImagePreview(file ? URL.createObjectURL(file) : null);
   };
   const handleSubmitEmployee = async () => {
+
+    if (employeeForm.password !== employeeForm.password_confirmation) {
+      alert('كلمتا المرور غير متطابقتين!');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       Object.entries(employeeForm).forEach(([key, val]) => {
         if (val) formData.append(key, val);
       });
+
+
 
       await axios.post('http://127.0.0.1:8000/api/admin/employees', formData, {
         headers: {
@@ -153,7 +161,7 @@ export default function AdminDashboardHome() {
 
       alert('تمت إضافة الموظف');
       setOpenEmployeeDialog(false);
-      setEmployeeForm({ name: '', email: '', age: '', password: '', photo: null });
+      setEmployeeForm({ name: '', email: '', age: '', password: '', password_confirmation: '', photo: null });
       setEmployeeImagePreview(null);
     } catch (err) {
       console.error(err);
@@ -163,14 +171,11 @@ export default function AdminDashboardHome() {
 
   // إدخال بيانات المحامي
   const handleLawyerInput = (e) => {
-    const { name, value, type, options } = e.target;
-    if (type === 'select-multiple') {
-      const selected = Array.from(options)
-        .filter((opt) => opt.selected)
-        .map((opt) => opt.value);
-      setLawyerForm({ ...lawyerForm, [name]: selected });
+    const { name, value } = e.target;
+    if (Array.isArray(value)) {
+      setLawyerForm((prev) => ({ ...prev, [name]: value }));
     } else {
-      setLawyerForm({ ...lawyerForm, [name]: value });
+      setLawyerForm((prev) => ({ ...prev, [name]: value }));
     }
   };
   const handleLawyerFile = (e) => {
@@ -178,14 +183,26 @@ export default function AdminDashboardHome() {
     setLawyerForm({ ...lawyerForm, photo: file });
     setLawyerImagePreview(file ? URL.createObjectURL(file) : null);
   };
+
+  const handleLawyerCertificate = (e) => {
+    const file = e.target.files[0];
+    setLawyerForm({ ...lawyerForm, certificate: file });
+  };
   const handleSubmitLawyer = async () => {
+
+
+    if (lawyerForm.password !== lawyerForm.password_confirmation) {
+      alert('كلمتا المرور غير متطابقتين!');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       Object.entries(lawyerForm).forEach(([key, val]) => {
         if (val) {
-          if (key === 'specializations') {
-            val.forEach(id => formData.append('specializations[]', id));
+          if (key === 'specialization_ids') {
+            val.forEach(id => formData.append('specialization_ids[]', id));
           } else {
             formData.append(key, val);
           }
@@ -201,7 +218,7 @@ export default function AdminDashboardHome() {
 
       alert('تمت إضافة المحامي');
       setOpenLawyerDialog(false);
-      setLawyerForm({ name: '', email: '', age: '', password: '', specializations: [], photo: null });
+      setLawyerForm({ name: '', email: '', age: '', password: '', password_confirmation: '', specializations: [], photo: null });
       setLawyerImagePreview(null);
     } catch (err) {
       console.error(err);
@@ -333,6 +350,16 @@ export default function AdminDashboardHome() {
             sx={inputFieldStyles}
             InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
           />
+          <TextField
+            name="password_confirmation"
+            label="تأكيد كلمة المرور"
+            type="password"
+            onChange={handleEmployeeInput}
+            autoComplete="off"
+            sx={inputFieldStyles}
+            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+          />
+
         </DialogContent>
         <DialogActions sx={{ background: '#141414', m: 0, p: 2 }}>
           <Button onClick={() => setOpenEmployeeDialog(false)} sx={{ color: '#C4A484' }}>إلغاء</Button>
@@ -388,6 +415,7 @@ export default function AdminDashboardHome() {
               </label>
             </Box>
           </Box>
+          
           <TextField
             name="name"
             label="الاسم"
@@ -423,21 +451,56 @@ export default function AdminDashboardHome() {
             InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
           />
           <TextField
-            select
-            SelectProps={{ multiple: true }}
-            name="specializations"
-            label="التخصصات"
-            value={lawyerForm.specializations}
+            name="password_confirmation"
+            label="تأكيد كلمة المرور"
+            type="password"
             onChange={handleLawyerInput}
+            autoComplete="off"
             sx={inputFieldStyles}
             InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+          />
+
+          <TextField
+            select
+            SelectProps={{ multiple: true }}
+            name="specialization_ids"
+            label="التخصصات"
+            value={lawyerForm.specialization_ids || []}
+            onChange={handleLawyerInput}
+            sx={inputFieldStyles}
           >
             {specializations.map((spec) => (
-              <MenuItem key={spec.id} value={spec.id} sx={{ color: '#E0C181', fontWeight: 'bold' }}>
+              <MenuItem key={spec.id} value={spec.id}>
                 {spec.name}
               </MenuItem>
             ))}
           </TextField>
+<Box sx={{ mt: 2 }}>
+            <Typography sx={{ color: '#C4A484', mb: 1 }}>شهادة المحامي</Typography>
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{
+                color: '#E0C181',
+                borderColor: '#C4A484',
+                '&:hover': { borderColor: '#E0C181', backgroundColor: 'rgba(255,255,255,0.05)' },
+              }}
+            >
+              تحميل الشهادة
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleLawyerCertificate}
+              />
+            </Button>
+            {lawyerForm.certificate && (
+              <Typography sx={{ color: '#E0C181', mt: 1, fontSize: 14 }}>
+                تم اختيار الملف: {lawyerForm.certificate.name}
+              </Typography>
+            )}
+          </Box>
+
         </DialogContent>
         <DialogActions sx={{ background: '#141414', m: 0, p: 2 }}>
           <Button onClick={() => setOpenLawyerDialog(false)} sx={{ color: '#C4A484' }}>إلغاء</Button>
