@@ -377,6 +377,7 @@ function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete
           </Tooltip>
         )}
 
+
       </CardActions>
 
     </UserCardStyled>
@@ -424,15 +425,21 @@ export default function ManagementPage() {
   const [selectedUserForView, setSelectedUserForView] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [archivedLawyers, setArchivedLawyers] = useState([]);
+  const [archivedEmployees, setArchivedEmployees] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+    if (!token) { navigate('/login'); return; }
     fetchLawyers(token);
-    fetchEmployees(token);
+    fetchArchivedLawyers(token);
+  }, [navigate]);
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) { navigate('/login'); return; }
+
+    fetchEmployees(token);             // main employees
+    fetchArchivedEmployees(token);     // archived employees
   }, [navigate]);
 
   const fetchLawyers = async (token) => {
@@ -451,6 +458,17 @@ export default function ManagementPage() {
     }
   };
 
+  const fetchArchivedLawyers = async (token) => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/admin/lawyers-archived/', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setArchivedLawyers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch archived lawyers:', error);
+    }
+  };
+
   const fetchEmployees = async (token) => {
     try {
       const response = await axios.get('http://127.0.0.1:8000/api/admin/employees', {
@@ -465,11 +483,26 @@ export default function ManagementPage() {
       }
     }
   };
+  const fetchArchivedEmployees = async (token) => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/admin/employees-archived/', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setArchivedEmployees(response.data);
+    } catch (error) {
+      console.error('Failed to fetch archived employees:', error);
+    }
+  };
+
 
   // --- Filtering Logic ---
-  const filteredLawyers = lawyers.filter(l => l.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterStatus === 'all' || l.status === filterStatus));
-  const filteredEmployees = employees.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) && (filterStatus === 'all' || e.status === filterStatus));
+  const filteredLawyers = filterStatus === 'archived'
+    ? archivedLawyers.filter(l => l.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : lawyers.filter(l => l.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  const filteredEmployees = filterStatus === 'archived'
+    ? archivedEmployees.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : employees.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()));
   // --- Event Handlers ---
   const handleSearchChange = (event) => setSearchTerm(event.target.value);
   const handleFilterChange = (_, newFilter) => { if (newFilter !== null) setFilterStatus(newFilter); };
