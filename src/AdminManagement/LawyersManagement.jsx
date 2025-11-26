@@ -328,8 +328,12 @@ function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
 }
 
 // --- UserCard Component ---
-function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete }) {
+function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete, isArchivedView = false }) {
   const isLawyer = type === 'lawyer';
+  // Determine if user is archived - prioritize isArchivedView (which list we're viewing)
+  // If we're in archived view, show unarchive button. Otherwise, show archive button.
+  const isArchived = isArchivedView;
+  
   return (
     <UserCardStyled>
       <CardContent sx={{ flexGrow: 1, p: 3, textAlign: 'center' }}>
@@ -347,7 +351,11 @@ function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete
             {user.position || ''}
           </Typography>
         )}
-        <Chip label={user.status === 'active' ? 'نشط' : 'مؤرشف'} size="small" sx={{ bgcolor: user.status === 'active' ? alpha(colors.gold, 0.3) : '#555', color: colors.white }} />
+        <Chip 
+          label={isArchivedView || user.isArchived || user.status === 'archived' || user.deleted_at !== null ? 'مؤرشف' : 'نشط'} 
+          size="small" 
+          sx={{ bgcolor: isArchivedView || user.isArchived || user.status === 'archived' || user.deleted_at !== null ? '#555' : alpha(colors.gold, 0.3), color: colors.white }} 
+        />
       </CardContent>
       <Divider sx={{ borderColor: alpha(colors.gold, 0.1) }} />
       <CardActions sx={{ justifyContent: 'center', background: alpha(colors.black, 0.3), py: 1 }}>
@@ -363,9 +371,9 @@ function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete
           </IconButton>
         </Tooltip>
 
-        {user.isArchived ? (
+        {isArchived ? (
           <Tooltip title="إلغاء الأرشفة">
-            <IconButton onClick={() => onUnarchive(user)} size="small" sx={{ color: colors.textSecondary }}>
+            <IconButton onClick={() => onUnarchive(user)} size="small" sx={{ color: '#66bb6a' }}>
               <UnarchiveOutlinedIcon />
             </IconButton>
           </Tooltip>
@@ -377,6 +385,13 @@ function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete
           </Tooltip>
         )}
 
+        {isArchivedView && (
+          <Tooltip title="حذف نهائي">
+            <IconButton onClick={() => onDelete(user, type)} size="small" sx={{ color: '#d32f2f' }}>
+              <DeleteOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        )}
 
       </CardActions>
 
@@ -562,8 +577,12 @@ export default function ManagementPage() {
       await axios.delete(`http://127.0.0.1:8000/api/admin/lawyers/${lawyer.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // update local state by refetching
-      fetchLawyers(token);
+      // update local state by refetching both lists
+      await Promise.all([
+        fetchLawyers(token),
+        fetchArchivedLawyers(token)
+      ]);
+      alert('تم أرشفة المحامي بنجاح');
     } catch (error) {
       console.error("Failed to archive lawyer:", error?.response?.data || error);
       alert(error?.response?.data?.message || "حدث خطأ أثناء أرشفة المحامي.");
@@ -579,7 +598,12 @@ export default function ManagementPage() {
       await axios.put(`http://127.0.0.1:8000/api/admin/lawyers/${lawyer.id}/restore`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchLawyers(token);
+      // update local state by refetching both lists
+      await Promise.all([
+        fetchLawyers(token),
+        fetchArchivedLawyers(token)
+      ]);
+      alert('تم إلغاء أرشفة المحامي بنجاح');
     } catch (error) {
       console.error("Failed to unarchive lawyer:", error?.response?.data || error);
       alert(error?.response?.data?.message || "حدث خطأ أثناء إلغاء أرشفة المحامي.");
@@ -628,8 +652,12 @@ export default function ManagementPage() {
       await axios.delete(`http://127.0.0.1:8000/api/admin/employees/${employee.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // remove locally or refetch
-      setEmployees(prev => prev.filter(e => e.id !== employee.id));
+      // update local state by refetching both lists
+      await Promise.all([
+        fetchEmployees(token),
+        fetchArchivedEmployees(token)
+      ]);
+      alert('تم أرشفة الموظف بنجاح');
     } catch (error) {
       console.error("Failed to archive employee:", error?.response?.data || error);
       alert(error?.response?.data?.message || "حدث خطأ أثناء أرشفة الموظف.");
@@ -642,11 +670,15 @@ export default function ManagementPage() {
     if (!token) { navigate("/login"); return; }
 
     try {
-      await axios.post(`http://127.0.0.1:8000/api/admin/employees/${employee.id}/restore`, null, {
+      await axios.put(`http://127.0.0.1:8000/api/admin/employees/${employee.id}/restore`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // refetch list to include restored employee
-      fetchEmployees(token);
+      // update local state by refetching both lists
+      await Promise.all([
+        fetchEmployees(token),
+        fetchArchivedEmployees(token)
+      ]);
+      alert('تم إلغاء أرشفة الموظف بنجاح');
     } catch (error) {
       console.error("Failed to unarchive employee:", error?.response?.data || error);
       alert(error?.response?.data?.message || "حدث خطأ أثناء إلغاء أرشفة الموظف.");
@@ -669,19 +701,23 @@ export default function ManagementPage() {
 
     try {
       if (userToDelete.type === 'lawyer') {
-        await axios.delete(`http://127.0.0.1:8000/api/admin/lawyers/${userToDelete.id}`, {
+        await axios.delete(`http://127.0.0.1:8000/api/admin/lawyers/${userToDelete.id}/force`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setLawyers(prev => prev.filter(l => l.id !== userToDelete.id));
+        // Refetch archived lawyers list after deletion
+        await fetchArchivedLawyers(token);
+        alert('تم حذف المحامي نهائياً بنجاح');
       } else {
-        await axios.delete(`http://127.0.0.1:8000/api/admin/employees/${userToDelete.id}`, {
+        await axios.delete(`http://127.0.0.1:8000/api/admin/employees/${userToDelete.id}/force`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setEmployees(prev => prev.filter(e => e.id !== userToDelete.id));
+        // Refetch archived employees list after deletion
+        await fetchArchivedEmployees(token);
+        alert('تم حذف الموظف نهائياً بنجاح');
       }
     } catch (error) {
       console.error('Delete failed:', error);
-      alert('حدث خطأ أثناء الحذف.');
+      alert(error?.response?.data?.message || 'حدث خطأ أثناء الحذف.');
     } finally {
       setConfirmDeleteOpen(false);
       setUserToDelete(null);
@@ -729,7 +765,7 @@ export default function ManagementPage() {
               fontFamily="Cairo, sans-serif"
             >
               إدارة المستخدمين
-            </Typography>
+            </Typography> 
             <Typography
               fontFamily="Cairo, sans-serif"
               color={colors.textSecondary}
@@ -755,6 +791,7 @@ export default function ManagementPage() {
             ) : filteredLawyers.map(lawyer => (
               <Grid key={lawyer.id} item xs={12} sm={6} md={4}>
                 <UserCard
+                
                   key={lawyer.id}
                   user={lawyer}
                   type="lawyer"
@@ -763,6 +800,7 @@ export default function ManagementPage() {
                   onUnarchive={handleUnarchiveLawyer}   // <-- And this
                   onView={handleViewUser}
                   onDelete={handleDeleteUser}
+                  isArchivedView={filterStatus === 'archived'}
                 />
 
               </Grid>
@@ -784,6 +822,7 @@ export default function ManagementPage() {
                   onUnarchive={handleUnarchiveEmployee} // <-- And this
                   onView={handleViewUser}
                   onDelete={handleDeleteUser}
+                  isArchivedView={filterStatus === 'archived'}
                 />
 
               </Grid>

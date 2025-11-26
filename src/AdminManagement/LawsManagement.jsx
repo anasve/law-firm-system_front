@@ -170,16 +170,8 @@ export default function LawsManagement() {
       const token = localStorage.getItem("authToken");
       if (token) return true;
 
-      // If no token, try to login (replace with your actual login logic)
-      const response = await api.post("/login", {
-        email: "adminn@example.com", // Replace with actual admin credentials
-        password: "12345678"
-      });
-
-      if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
-        return true;
-      }
+      // If no token, redirect to login (don't auto-login with hardcoded credentials)
+      showSnackbar("يرجى تسجيل الدخول أولاً", "error");
       return false;
     } catch (error) {
       console.error("Authentication failed:", error);
