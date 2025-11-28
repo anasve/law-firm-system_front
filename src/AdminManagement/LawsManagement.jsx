@@ -77,7 +77,7 @@ const newLawInitialState = {
   title: "",
   category: "",
   summary: "",
-  fullContent: "",
+  full_content: "",
 };
 
 // Styled components
@@ -253,7 +253,10 @@ export default function LawsManagement() {
           payload.status = "draft";
           break;
         case "archive":
-          payload.status = "archived";
+          // Use DELETE for archive (soft delete) - same as lawyers/employees
+          method = "delete";
+          endpoint = `/laws/${id}`;
+          payload = null;
           break;
         case "restore":
           method = "put";
@@ -269,7 +272,9 @@ export default function LawsManagement() {
           throw new Error("Invalid action");
       }
 
-      await api[method](endpoint, payload);
+      console.log(`Updating law ${id} with action: ${action}`, { endpoint, method, payload });
+      const response = await api[method](endpoint, payload);
+      console.log(`Response for ${action}:`, response.data);
 
       const messages = {
         publish: "Law published successfully",
@@ -284,10 +289,41 @@ export default function LawsManagement() {
         action === "publish" || action === "restore" ? "success" : "info"
       );
 
-      fetchLaws(); // Refresh the list
+      // Refresh the list after any action
+      fetchLaws();
     } catch (error) {
       console.error(`Error ${action} law:`, error);
-      showSnackbar(`Failed to ${action} law`, "error");
+      console.error(`Error details:`, {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      let errorMessage = `Failed to ${action} law`;
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors) {
+          // Handle validation errors
+          const errorMessages = [];
+          Object.keys(errorData.errors).forEach(key => {
+            if (Array.isArray(errorData.errors[key])) {
+              errorMessages.push(...errorData.errors[key]);
+            } else {
+              errorMessages.push(errorData.errors[key]);
+            }
+          });
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('\n');
+          }
+        }
+      }
+      
+      showSnackbar(errorMessage, "error");
     }
   };
 
@@ -304,13 +340,51 @@ export default function LawsManagement() {
 
   const handleSaveChanges = async () => {
     try {
-      await api.put(`/laws/${currentLaw.id}`, currentLaw);
+      // Ensure full_content is used instead of fullContent
+      const lawDataToUpdate = {
+        ...currentLaw,
+        full_content: currentLaw.full_content || currentLaw.fullContent || '',
+      };
+      // Remove fullContent if it exists to avoid confusion
+      delete lawDataToUpdate.fullContent;
+      
+      console.log("Updating law with data:", lawDataToUpdate);
+      const response = await api.put(`/laws/${currentLaw.id}`, lawDataToUpdate);
+      console.log("Law updated successfully:", response.data);
       showSnackbar("Changes saved successfully", "success");
       fetchLaws();
       handleEditDialogClose();
     } catch (error) {
       console.error("Error updating law:", error);
-      showSnackbar("Failed to save changes", "error");
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      
+      let errorMessage = "Failed to save changes";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors) {
+          const errorMessages = [];
+          Object.keys(errorData.errors).forEach(key => {
+            if (Array.isArray(errorData.errors[key])) {
+              errorMessages.push(...errorData.errors[key]);
+            } else {
+              errorMessages.push(errorData.errors[key]);
+            }
+          });
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('\n');
+          }
+        }
+      }
+      
+      showSnackbar(errorMessage, "error");
     }
   };
 
@@ -324,13 +398,43 @@ export default function LawsManagement() {
 
   const handleAddNewLaw = async () => {
     try {
-      await api.post("/laws", newLawData);
+      console.log("Adding new law with data:", newLawData);
+      const response = await api.post("/laws", newLawData);
+      console.log("Law added successfully:", response.data);
       showSnackbar("New law added successfully", "success");
       fetchLaws();
       handleAddDialogClose();
     } catch (error) {
       console.error("Error adding law:", error);
-      showSnackbar("Failed to add law", "error");
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      
+      let errorMessage = "Failed to add law";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors) {
+          const errorMessages = [];
+          Object.keys(errorData.errors).forEach(key => {
+            if (Array.isArray(errorData.errors[key])) {
+              errorMessages.push(...errorData.errors[key]);
+            } else {
+              errorMessages.push(errorData.errors[key]);
+            }
+          });
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('\n');
+          }
+        }
+      }
+      
+      showSnackbar(errorMessage, "error");
     }
   };
 
@@ -523,7 +627,7 @@ export default function LawsManagement() {
                   whiteSpace: "pre-line",
                 }}
               >
-                {law.fullContent}
+                {law.full_content || law.fullContent || ''}
               </Typography>
               <Box
                 sx={{
@@ -534,7 +638,7 @@ export default function LawsManagement() {
                   pt: 1.5,
                 }}
               >
-                {law.status === "published" && (
+                {law.status === "published" && currentTab !== 3 && (
                   <>
                     <Tooltip title="Edit">
                       <IconButton onClick={() => handleEditClick(law)}>
@@ -557,7 +661,7 @@ export default function LawsManagement() {
                     </Tooltip>
                   </>
                 )}
-                {law.status === "draft" && (
+                {law.status === "draft" && currentTab !== 3 && (
                   <>
                     <Tooltip title="Edit">
                       <IconButton onClick={() => handleEditClick(law)}>
@@ -582,7 +686,7 @@ export default function LawsManagement() {
                     </Tooltip>
                   </>
                 )}
-                {law.status === "archived" && (
+                {(law.status === "archived" || currentTab === 3) && (
                   <>
                     <Tooltip title="Restore">
                       <IconButton
@@ -664,13 +768,13 @@ export default function LawsManagement() {
             InputProps={{ sx: { color: colors.white } }}
           />
           <TextField
-            name="fullContent"
+            name="full_content"
             label="Full Description"
             fullWidth
             multiline
             rows={6}
             variant="filled"
-            value={newLawData.fullContent}
+            value={newLawData.full_content}
             onChange={(e) => handleFormChange(e, "add")}
             InputLabelProps={{ sx: { color: colors.textLight } }}
             InputProps={{ sx: { color: colors.white } }}
@@ -751,13 +855,13 @@ export default function LawsManagement() {
             InputProps={{ sx: { color: colors.white } }}
           />
           <TextField
-            name="fullContent"
+            name="full_content"
             label="Full Description"
             fullWidth
             multiline
             rows={6}
             variant="filled"
-            value={currentLaw?.fullContent || ""}
+            value={currentLaw?.full_content || currentLaw?.fullContent || ""}
             onChange={(e) => handleFormChange(e, "edit")}
             InputLabelProps={{ sx: { color: colors.textLight } }}
             InputProps={{ sx: { color: colors.white } }}
