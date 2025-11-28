@@ -61,11 +61,11 @@ export default function GoldenSidebar() {
   const location = useLocation();
 
   const menuItems = [
-    { text: 'الرئيسية', icon: <PieChartIcon />, path: '/dashboard' },
-    { text: 'إدارة المستخدمين', icon: <SupervisorAccountIcon />, path: '/lawyers' },
-    { text: 'إدارة القوانين', icon: <GavelIcon />, path: '/laws-management' },
-    { text: 'قائمة الاختصاصات', icon: <ClassIcon />, path: '/specializations' },
-    { text: 'تعديل الملف الشخصي', icon: <AccountCircleIcon />, path: '/profile-edit' },
+    { text: 'Home', icon: <PieChartIcon />, path: '/dashboard' },
+    { text: 'User Management', icon: <SupervisorAccountIcon />, path: '/lawyers' },
+    { text: 'Laws Management', icon: <GavelIcon />, path: '/laws-management' },
+    { text: 'Specializations', icon: <ClassIcon />, path: '/specializations' },
+    { text: 'Edit Profile', icon: <AccountCircleIcon />, path: '/profile-edit' },
   ];
 
   const isPathActive = (path) => {
@@ -80,7 +80,7 @@ export default function GoldenSidebar() {
     try {
       const token = localStorage.getItem('adminToken'); // افترضنا أنك خزنت التوكن هنا
       if (!token) {
-        alert('لم يتم تسجيل الدخول بعد.');
+        alert('Not logged in yet.');
         setLoggingOut(false);
         return;
       }
@@ -99,7 +99,7 @@ export default function GoldenSidebar() {
       navigate('/'); // إعادة التوجيه لصفحة تسجيل الدخول
     } catch (error) {
       console.error('Logout failed:', error);
-      alert('حدث خطأ أثناء تسجيل الخروج. حاول مرة أخرى.');
+      alert('An error occurred while logging out. Please try again.');
     } finally {
       setLoggingOut(false);
     }
@@ -119,11 +119,11 @@ export default function GoldenSidebar() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', p: 2, mb: 2 }}>
-        <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, ml: 2 }}>
+        <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, mr: 2 }}>
           <SchoolIcon sx={{ fontSize: 30, color: colors.black }} />
         </Avatar>
-        <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Cairo, sans-serif">
-          المحامي برو
+        <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
+          Lawyer Pro
         </Typography>
       </Box>
 
@@ -137,7 +137,7 @@ export default function GoldenSidebar() {
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText
               primary={item.text}
-              primaryTypographyProps={{ fontFamily: 'Cairo, sans-serif', fontWeight: 'medium' }}
+              primaryTypographyProps={{ fontFamily: 'Arial, sans-serif', fontWeight: 'medium' }}
             />
           </StyledListItemButton>
         ))}
@@ -150,8 +150,8 @@ export default function GoldenSidebar() {
             <LogoutIcon />
           </ListItemIcon>
           <ListItemText
-            primary={loggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
-            primaryTypographyProps={{ fontFamily: 'Cairo, sans-serif', fontWeight: 'medium' }}
+            primary={loggingOut ? 'Logging out...' : 'Logout'}
+            primaryTypographyProps={{ fontFamily: 'Arial, sans-serif', fontWeight: 'medium' }}
           />
         </StyledListItemButton>
       </Box>
@@ -161,10 +161,10 @@ export default function GoldenSidebar() {
           textAlign: 'center',
           py: 2,
           color: alpha(colors.white, 0.5),
-          fontFamily: 'Cairo, sans-serif',
+          fontFamily: 'Arial, sans-serif',
         }}
       >
-        <Typography variant="caption">© {new Date().getFullYear()} جميع الحقوق محفوظة</Typography>
+        <Typography variant="caption">© {new Date().getFullYear()} All rights reserved</Typography>
       </Box>
     </Box>
   );

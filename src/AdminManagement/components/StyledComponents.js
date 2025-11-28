@@ -1,6 +1,7 @@
 import { styled, alpha } from "@mui/material/styles";
-import { TextField, Tabs, Tab, Box } from "@mui/material";
+import { TextField, Tabs, Tab, Box, Typography } from "@mui/material";
 import { colors } from "../utils/constants";
+import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 
 export const SearchTextField = styled(TextField)({
   "& .MuiInput-underline:before": {
@@ -10,7 +11,7 @@ export const SearchTextField = styled(TextField)({
   "& .MuiInput-underline:after": { borderBottomColor: colors.gold },
   "& .MuiInputBase-input": {
     color: colors.white,
-    fontFamily: "Cairo, sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
 });
 
@@ -36,10 +37,10 @@ export const StyledTab = styled(Tab)(({ theme }) => ({
 
 export const EmptyState = ({ message, tab }) => {
   const messages = {
-    0: "لا توجد قوانين تطابق بحثك",
-    1: "لا توجد قوانين منشورة حالياً",
-    2: "لا توجد قوانين غير منشورة حالياً",
-    3: "الأرشيف فارغ حالياً",
+    0: "No laws match your search",
+    1: "No published laws currently",
+    2: "No unpublished laws currently",
+    3: "Archive is currently empty",
   };
   return (
     <Box sx={{ textAlign: "center", p: 8, color: colors.textLight }}>

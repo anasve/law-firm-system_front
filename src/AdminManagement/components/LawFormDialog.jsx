@@ -70,7 +70,7 @@ export default function LawFormDialog({
         <TextField
           autoFocus
           name="title"
-          label="عنوان القانون"
+          label="Law Title"
           fullWidth
           variant="filled"
           value={formData.title}
@@ -81,7 +81,7 @@ export default function LawFormDialog({
         />
         <TextField
           name="category"
-          label="الفئة"
+          label="Category"
           fullWidth
           variant="filled"
           value={formData.category}
@@ -92,7 +92,7 @@ export default function LawFormDialog({
         />
         <TextField
           name="summary"
-          label="ملخص القانون"
+          label="Law Summary"
           fullWidth
           multiline
           rows={3}
@@ -105,7 +105,7 @@ export default function LawFormDialog({
         />
         <TextField
           name="fullContent"
-          label="شرح كامل"
+          label="Full Description"
           fullWidth
           multiline
           rows={6}
@@ -122,7 +122,7 @@ export default function LawFormDialog({
           variant="outlined"
           sx={{ color: colors.white, borderColor: colors.white }}
         >
-          إلغاء
+          Cancel
         </Button>
         <Button
           onClick={handleSubmit}
@@ -133,7 +133,7 @@ export default function LawFormDialog({
             "&:hover": { backgroundColor: "#B4943C" },
           }}
         >
-          {law ? "حفظ التعديلات" : "حفظ"}
+          {law ? "Save Changes" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

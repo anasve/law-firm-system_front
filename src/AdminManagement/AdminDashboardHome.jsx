@@ -39,8 +39,8 @@ const inputFieldStyles = {
   },
   '& .MuiInputLabel-root': {
     color: '#C4A484',
-    right: '1.5rem',
-    left: 'auto',
+    left: '1.5rem',
+    right: 'auto',
   },
   '& .MuiInputLabel-root.Mui-focused': {
     color: '#E0C181',
@@ -58,7 +58,7 @@ const WelcomeBanner = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(4),
   borderRadius: '16px',
   background: `linear-gradient(145deg, #232323 30%, #1A1A1A 100%)`,
-  borderLeft: `5px solid #D4AF37`,
+  borderRight: `5px solid #D4AF37`,
   color: '#FFFFFF',
   position: 'relative',
 }));
@@ -126,7 +126,7 @@ export default function AdminDashboardHome() {
     fetchData();
   }, []);
 
-  // إدخال بيانات الموظف
+  // Employee data input
   const handleEmployeeInput = (e) => {
     const { name, value } = e.target;
     setEmployeeForm({ ...employeeForm, [name]: value });
@@ -139,7 +139,7 @@ export default function AdminDashboardHome() {
   const handleSubmitEmployee = async () => {
 
     if (employeeForm.password !== employeeForm.password_confirmation) {
-      alert('كلمتا المرور غير متطابقتين!');
+      alert('Passwords do not match!');
       return;
     }
 
@@ -159,17 +159,17 @@ export default function AdminDashboardHome() {
         },
       });
 
-      alert('تمت إضافة الموظف');
+      alert('Employee added successfully');
       setOpenEmployeeDialog(false);
       setEmployeeForm({ name: '', email: '', age: '', password: '', password_confirmation: '', photo: null });
       setEmployeeImagePreview(null);
     } catch (err) {
       console.error(err);
-      alert('فشل في إضافة الموظف');
+      alert('Failed to add employee');
     }
   };
 
-  // إدخال بيانات المحامي
+  // Lawyer data input
   const handleLawyerInput = (e) => {
     const { name, value } = e.target;
     if (Array.isArray(value)) {
@@ -192,7 +192,7 @@ export default function AdminDashboardHome() {
 
 
     if (lawyerForm.password !== lawyerForm.password_confirmation) {
-      alert('كلمتا المرور غير متطابقتين!');
+      alert('Passwords do not match!');
       return;
     }
 
@@ -216,19 +216,19 @@ export default function AdminDashboardHome() {
         },
       });
 
-      alert('تمت إضافة المحامي');
+      alert('Lawyer added successfully');
       setOpenLawyerDialog(false);
       setLawyerForm({ name: '', email: '', age: '', password: '', password_confirmation: '', specializations: [], photo: null });
       setLawyerImagePreview(null);
     } catch (err) {
       console.error(err);
-      alert('فشل في إضافة المحامي');
+      alert('Failed to add lawyer');
     }
   };
 
   const stats = [
-    { title: 'إجمالي المحامين', value: totalLawyers ?? '...', icon: <PeopleAltOutlinedIcon sx={{ color: colors.black }} />, color: colors.gold },
-    { title: 'إجمالي الموظفين', value: totalEmployees ?? '...', icon: <Groups2OutlinedIcon sx={{ color: colors.black }} />, color: colors.gold },
+    { title: 'Total Lawyers', value: totalLawyers ?? '...', icon: <PeopleAltOutlinedIcon sx={{ color: colors.black }} />, color: colors.gold },
+    { title: 'Total Employees', value: totalEmployees ?? '...', icon: <Groups2OutlinedIcon sx={{ color: colors.black }} />, color: colors.gold },
   ];
 
   // Dialog PaperProps لتوحيد الخلفية والزوايا
@@ -244,10 +244,10 @@ export default function AdminDashboardHome() {
     <Box>
       <WelcomeBanner elevation={5}>
         <Typography variant="h4" fontWeight="bold">
-          أهلاً بعودتك، مدير النظام
+          Welcome back, System Administrator
         </Typography>
         <Typography variant="subtitle1" sx={{ color: '#ccc', mt: 1 }}>
-          نتمنى لك يوماً مثمراً. إليك نظرة سريعة على لوحة التحكم.
+          We wish you a productive day. Here's a quick overview of your dashboard.
         </Typography>
       </WelcomeBanner>
 
@@ -268,16 +268,16 @@ export default function AdminDashboardHome() {
       </Grid>
 
       <Paper sx={{ mt: 5, p: 3, borderRadius: '12px', backgroundColor: colors.lightBlack }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ color: colors.white, mb: 2 }}>إجراءات سريعة</Typography>
+        <Typography variant="h6" fontWeight="bold" sx={{ color: colors.white, mb: 2 }}>Quick Actions</Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <ActionButton startIcon={<AddIcon />} onClick={() => setOpenLawyerDialog(true)}>إضافة محامي</ActionButton>
-          <ActionButton startIcon={<AddIcon />} onClick={() => setOpenEmployeeDialog(true)}>إضافة موظف</ActionButton>
+          <ActionButton startIcon={<AddIcon />} onClick={() => setOpenLawyerDialog(true)}>Add Lawyer</ActionButton>
+          <ActionButton startIcon={<AddIcon />} onClick={() => setOpenEmployeeDialog(true)}>Add Employee</ActionButton>
         </Box>
       </Paper>
 
-      {/* Dialog: إضافة موظف */}
+      {/* Dialog: Add Employee */}
       <Dialog open={openEmployeeDialog} onClose={() => setOpenEmployeeDialog(false)} PaperProps={dialogPaperProps}>
-        <DialogTitle sx={{ background: '#141414', color: '#E0C181', fontWeight: 'bold', borderRadius: 0 }}>إضافة موظف</DialogTitle>
+        <DialogTitle sx={{ background: '#141414', color: '#E0C181', fontWeight: 'bold', borderRadius: 0 }}>Add Employee</DialogTitle>
         <DialogContent
           sx={{
             display: 'flex', flexDirection: 'column', gap: 2, background: '#141414', color: '#E0C181', p: 3
@@ -300,10 +300,10 @@ export default function AdminDashboardHome() {
               }}
             >
               {!employeeImagePreview && (
-                <Typography sx={{ color: '#C4A484', fontSize: 13 }}>الصورة الشخصية</Typography>
+                <Typography sx={{ color: '#C4A484', fontSize: 13 }}>Profile Picture</Typography>
               )}
               <label htmlFor="employee-photo-upload" style={{
-                position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.7)', borderRadius: '50%', padding: 4, cursor: 'pointer'
+                position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.7)', borderRadius: '50%', padding: 4, cursor: 'pointer'
               }}>
                 <input
                   id="employee-photo-upload"
@@ -318,51 +318,51 @@ export default function AdminDashboardHome() {
           </Box>
           <TextField
             name="name"
-            label="الاسم"
+            label="Name"
             onChange={handleEmployeeInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="email"
-            label="البريد الإلكتروني"
+            label="Email"
             onChange={handleEmployeeInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="age"
-            label="العمر"
+            label="Age"
             type="number"
             onChange={handleEmployeeInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="password"
-            label="كلمة المرور"
+            label="Password"
             type="password"
             onChange={handleEmployeeInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="password_confirmation"
-            label="تأكيد كلمة المرور"
+            label="Confirm Password"
             type="password"
             onChange={handleEmployeeInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
 
         </DialogContent>
         <DialogActions sx={{ background: '#141414', m: 0, p: 2 }}>
-          <Button onClick={() => setOpenEmployeeDialog(false)} sx={{ color: '#C4A484' }}>إلغاء</Button>
+          <Button onClick={() => setOpenEmployeeDialog(false)} sx={{ color: '#C4A484' }}>Cancel</Button>
           <Button onClick={handleSubmitEmployee} sx={{
             backgroundColor: '#E0C181',
             color: '#141414',
@@ -370,13 +370,13 @@ export default function AdminDashboardHome() {
             borderRadius: '8px',
             px: 4,
             '&:hover': { backgroundColor: '#C4A484' }
-          }}>إضافة</Button>
+          }}>Add</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Dialog: إضافة محامي */}
+      {/* Dialog: Add Lawyer */}
       <Dialog open={openLawyerDialog} onClose={() => setOpenLawyerDialog(false)} PaperProps={dialogPaperProps}>
-        <DialogTitle sx={{ background: '#141414', color: '#E0C181', fontWeight: 'bold', borderRadius: 0 }}>إضافة محامي</DialogTitle>
+        <DialogTitle sx={{ background: '#141414', color: '#E0C181', fontWeight: 'bold', borderRadius: 0 }}>Add Lawyer</DialogTitle>
         <DialogContent
           sx={{
             display: 'flex', flexDirection: 'column', gap: 2, background: '#141414', color: '#E0C181', p: 3
@@ -399,10 +399,10 @@ export default function AdminDashboardHome() {
               }}
             >
               {!lawyerImagePreview && (
-                <Typography sx={{ color: '#C4A484', fontSize: 13 }}>الصورة الشخصية</Typography>
+                <Typography sx={{ color: '#C4A484', fontSize: 13 }}>Profile Picture</Typography>
               )}
               <label htmlFor="lawyer-photo-upload" style={{
-                position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.7)', borderRadius: '50%', padding: 4, cursor: 'pointer'
+                position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.7)', borderRadius: '50%', padding: 4, cursor: 'pointer'
               }}>
                 <input
                   id="lawyer-photo-upload"
@@ -418,53 +418,53 @@ export default function AdminDashboardHome() {
           
           <TextField
             name="name"
-            label="الاسم"
+            label="Name"
             onChange={handleLawyerInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="email"
-            label="البريد الإلكتروني"
+            label="Email"
             onChange={handleLawyerInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="age"
-            label="العمر"
+            label="Age"
             type="number"
             onChange={handleLawyerInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="password"
-            label="كلمة المرور"
+            label="Password"
             type="password"
             onChange={handleLawyerInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
           <TextField
             name="password_confirmation"
-            label="تأكيد كلمة المرور"
+            label="Confirm Password"
             type="password"
             onChange={handleLawyerInput}
             autoComplete="off"
             sx={inputFieldStyles}
-            InputLabelProps={{ sx: { color: '#C4A484', right: '1.5rem', left: 'auto' } }}
+            InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           />
 
           <TextField
             select
             SelectProps={{ multiple: true }}
             name="specialization_ids"
-            label="التخصصات"
+            label="Specializations"
             value={lawyerForm.specialization_ids || []}
             onChange={handleLawyerInput}
             sx={inputFieldStyles}
@@ -476,7 +476,7 @@ export default function AdminDashboardHome() {
             ))}
           </TextField>
 <Box sx={{ mt: 2 }}>
-            <Typography sx={{ color: '#C4A484', mb: 1 }}>شهادة المحامي</Typography>
+            <Typography sx={{ color: '#C4A484', mb: 1 }}>Lawyer Certificate</Typography>
             <Button
               variant="outlined"
               component="label"
@@ -486,7 +486,7 @@ export default function AdminDashboardHome() {
                 '&:hover': { borderColor: '#E0C181', backgroundColor: 'rgba(255,255,255,0.05)' },
               }}
             >
-              تحميل الشهادة
+              Upload Certificate
               <input
                 type="file"
                 hidden
@@ -496,14 +496,14 @@ export default function AdminDashboardHome() {
             </Button>
             {lawyerForm.certificate && (
               <Typography sx={{ color: '#E0C181', mt: 1, fontSize: 14 }}>
-                تم اختيار الملف: {lawyerForm.certificate.name}
+                Selected file: {lawyerForm.certificate.name}
               </Typography>
             )}
           </Box>
 
         </DialogContent>
         <DialogActions sx={{ background: '#141414', m: 0, p: 2 }}>
-          <Button onClick={() => setOpenLawyerDialog(false)} sx={{ color: '#C4A484' }}>إلغاء</Button>
+          <Button onClick={() => setOpenLawyerDialog(false)} sx={{ color: '#C4A484' }}>Cancel</Button>
           <Button onClick={handleSubmitLawyer} sx={{
             backgroundColor: '#E0C181',
             color: '#141414',
@@ -511,7 +511,7 @@ export default function AdminDashboardHome() {
             borderRadius: '8px',
             px: 4,
             '&:hover': { backgroundColor: '#C4A484' }
-          }}>إضافة</Button>
+          }}>Add</Button>
         </DialogActions>
       </Dialog>
     </Box>

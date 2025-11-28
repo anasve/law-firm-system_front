@@ -31,7 +31,7 @@ const SearchTextField = styled(TextField)({
   '& .MuiInput-underline:before': { borderBottomColor: alpha(colors.white, 0.4) },
   '&:hover .MuiInput-underline:before': { borderBottomColor: colors.gold },
   '& .MuiInput-underline:after': { borderBottomColor: colors.gold },
-  '& .MuiInputBase-input': { color: colors.white, fontFamily: 'Cairo, sans-serif' }
+  '& .MuiInputBase-input': { color: colors.white, fontFamily: 'Arial, sans-serif' }
 });
 
 const SpecializationItem = styled(Box)(({ theme }) => ({
@@ -60,7 +60,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minHeight: '48px',
   color: alpha(colors.white, 0.7),
   fontWeight: 'bold',
-  fontFamily: 'Cairo, sans-serif',
+  fontFamily: 'Arial, sans-serif',
   '&.Mui-selected': { color: colors.gold },
   textTransform: 'none',
   fontSize: '0.8rem',
@@ -71,7 +71,7 @@ const EmptyState = ({ message, tab }) => (
   <Box sx={{ textAlign: 'center', p: 8, color: colors.textLight }}>
     <FindInPageOutlinedIcon sx={{ fontSize: 80, mb: 2, color: alpha(colors.white, 0.3) }} />
     <Typography variant="h6" fontWeight="bold">
-      {tab === 0 ? "لا توجد اختصاصات تطابق بحثك" : "الأرشيف فارغ حالياً"}
+      {tab === 0 ? "No specializations match your search" : "Archive is currently empty"}
     </Typography>
     <Typography variant="body1">{message}</Typography>
   </Box>
@@ -83,8 +83,8 @@ function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
       <DialogTitle sx={{ fontWeight: 'bold' }}>{title}</DialogTitle>
       <DialogContent><Typography>{message}</Typography></DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} sx={{ color: colors.textLight }}>إلغاء</Button>
-        <Button onClick={onConfirm} variant="contained" color="error">تأكيد الحذف</Button>
+        <Button onClick={onClose} sx={{ color: colors.textLight }}>Cancel</Button>
+        <Button onClick={onConfirm} variant="contained" color="error">Confirm Delete</Button>
       </DialogActions>
     </Dialog>
   );
@@ -94,14 +94,14 @@ function DescriptionDialog({ open, onClose, specialization }) {
   if (!specialization) return null;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: colors.lightBlack, color: colors.white, borderRadius: '12px' } }}>
-      <DialogTitle sx={{ fontWeight: 'bold' }}>شرح عن: {specialization.name}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 'bold' }}>Description: {specialization.name}</DialogTitle>
       <DialogContent>
         <Typography sx={{ whiteSpace: 'pre-line', lineHeight: 1.8, color: colors.textLight, pt: 1 }}>
           {specialization.description}
         </Typography>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={onClose} sx={{ color: colors.textLight }}>إغلاق</Button>
+        <Button onClick={onClose} sx={{ color: colors.textLight }}>Close</Button>
       </DialogActions>
     </Dialog>
   );
@@ -125,7 +125,7 @@ export default function SpecializationsManagement() {
       try {
         const token = localStorage.getItem('adminToken');
         if (!token) {
-          showSnackbar('يجب تسجيل الدخول أولاً', 'error');
+          showSnackbar('Please log in first', 'error');
           return;
         }
         const [activeRes, archivedRes] = await Promise.all([
@@ -137,8 +137,8 @@ export default function SpecializationsManagement() {
         const archivedWithStatus = archivedRes.data.map(s => ({ ...s, status: 'archived' }));
         setSpecializations([...activeWithStatus, ...archivedWithStatus]);
       } catch (error) {
-        console.error('فشل في جلب البيانات:', error);
-        showSnackbar('فشل في تحميل البيانات', 'error');
+        console.error('Failed to fetch data:', error);
+        showSnackbar('Failed to load data', 'error');
       } finally {
         setLoading(false);
       }
@@ -157,10 +157,10 @@ export default function SpecializationsManagement() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSpecializations(prev => prev.map(s => s.id === id ? { ...s, status: 'archived' } : s));
-      showSnackbar('تم نقل الاختصاص إلى الأرشيف', 'info');
+      showSnackbar('Specialization moved to archive', 'info');
     } catch (error) {
-      console.error('فشل الأرشفة:', error);
-      showSnackbar('فشل في أرشفة الاختصاص', 'error');
+      console.error('Archive failed:', error);
+      showSnackbar('Failed to archive specialization', 'error');
     }
   };
 
@@ -171,10 +171,10 @@ export default function SpecializationsManagement() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSpecializations(prev => prev.map(s => s.id === id ? { ...s, status: 'active' } : s));
-      showSnackbar('تمت استعادة الاختصاص بنجاح', 'success');
+      showSnackbar('Specialization restored successfully', 'success');
     } catch (err) {
-      console.error('فشل الاستعادة:', err);
-      showSnackbar('فشل في استعادة الاختصاص', 'error');
+      console.error('Restore failed:', err);
+      showSnackbar('Failed to restore specialization', 'error');
     }
   };
 
@@ -190,10 +190,10 @@ export default function SpecializationsManagement() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSpecializations(prev => prev.filter(s => s.id !== itemToDelete));
-      showSnackbar('تم حذف الاختصاص نهائياً', 'error');
+      showSnackbar('Specialization deleted permanently', 'error');
     } catch (err) {
-      console.error('فشل الحذف:', err);
-      showSnackbar('فشل في حذف الاختصاص', 'error');
+      console.error('Delete failed:', err);
+      showSnackbar('Failed to delete specialization', 'error');
     } finally {
       setIsConfirmOpen(false);
       setItemToDelete(null);
@@ -235,10 +235,10 @@ export default function SpecializationsManagement() {
         prev.map(s => (s.id === currentSpecialization.id ? { ...response.data, status: s.status } : s))
       );
       handleDialogClose(setIsEditDialogOpen)();
-      showSnackbar('تم حفظ التعديلات!', 'success');
+      showSnackbar('Changes saved successfully!', 'success');
     } catch (error) {
-      console.error('فشل حفظ التعديلات:', error);
-      showSnackbar('فشل في حفظ التعديلات', 'error');
+      console.error('Failed to save changes:', error);
+      showSnackbar('Failed to save changes', 'error');
     }
   };
 
@@ -251,10 +251,10 @@ export default function SpecializationsManagement() {
       const newSpec = { ...response.data, status: 'active' };
       setSpecializations(prev => [newSpec, ...prev]);
       handleDialogClose(setIsAddDialogOpen)();
-      showSnackbar('تمت إضافة الاختصاص بنجاح!', 'success');
+      showSnackbar('Specialization added successfully!', 'success');
     } catch (error) {
-      console.error('فشل في إضافة التخصص:', error);
-      showSnackbar('فشل في إضافة التخصص', 'error');
+      console.error('Failed to add specialization:', error);
+      showSnackbar('Failed to add specialization', 'error');
     }
   };
 
@@ -270,12 +270,12 @@ export default function SpecializationsManagement() {
   const specializationsToDisplay = currentTab === 0 ? activeSpecializations : archivedSpecializations;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, fontFamily: 'Cairo, sans-serif', color: colors.white, bgcolor: colors.black, minHeight: '100vh' }}>
-      <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>إدارة الاختصاصات</Typography>
+    <Box sx={{ p: { xs: 2, md: 4 }, fontFamily: 'Arial, sans-serif', color: colors.white, bgcolor: colors.black, minHeight: '100vh', direction: 'ltr' }}>
+      <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>Specializations Management</Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
         <SearchTextField
           variant="standard"
-          placeholder="ابحث عن اختصاص..."
+          placeholder="Search for specialization..."
           fullWidth
           sx={{ flexGrow: 1 }}
           value={searchQuery}
@@ -290,13 +290,13 @@ export default function SpecializationsManagement() {
           startIcon={<AddIcon />}
           sx={{ backgroundColor: colors.gold, color: colors.black, fontWeight: 'bold', padding: '10px 24px', borderRadius: '12px', '&:hover': { backgroundColor: '#B4943C' } }}
         >
-          إضافة اختصاص
+          Add Specialization
         </Button>
       </Box>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <StyledTabs value={currentTab} onChange={handleTabChange}>
-          <StyledTab label="الاختصاصات الفعالة" icon={<Chip label={activeSpecializations.length} size="small" sx={{ bgcolor: colors.success, color: colors.white, height: '18px', fontSize: '0.7rem' }} />} />
-          <StyledTab label="الأرشيف" icon={<Chip label={archivedSpecializations.length} size="small" sx={{ height: '18px', fontSize: '0.7rem' }} />} />
+          <StyledTab label="Active Specializations" icon={<Chip label={activeSpecializations.length} size="small" sx={{ bgcolor: colors.success, color: colors.white, height: '18px', fontSize: '0.7rem' }} />} />
+          <StyledTab label="Archive" icon={<Chip label={archivedSpecializations.length} size="small" sx={{ height: '18px', fontSize: '0.7rem' }} />} />
         </StyledTabs>
       </Box>
 
@@ -315,25 +315,25 @@ export default function SpecializationsManagement() {
                 onClick={() => handleViewDescription(spec)}
                 sx={{ color: colors.gold, borderColor: alpha(colors.gold, 0.5), '&:hover': { borderColor: colors.gold, bgcolor: alpha(colors.gold, 0.1) } }}
               >
-                عرض الشرح
+                View Description
               </Button>
               <Divider orientation="vertical" flexItem sx={{ mx: 1.5, borderColor: alpha(colors.grey, 0.2) }} />
               {spec.status === 'active' ? (
                 <>
-                  <Tooltip title="تعديل"><IconButton onClick={() => handleEditClick(spec)}><EditIcon sx={{ color: colors.info }} /></IconButton></Tooltip>
-                  <Tooltip title="أرشفة"><IconButton onClick={() => handleArchive(spec.id)}><ArchiveIcon sx={{ color: colors.grey }} /></IconButton></Tooltip>
+                  <Tooltip title="Edit"><IconButton onClick={() => handleEditClick(spec)}><EditIcon sx={{ color: colors.info }} /></IconButton></Tooltip>
+                  <Tooltip title="Archive"><IconButton onClick={() => handleArchive(spec.id)}><ArchiveIcon sx={{ color: colors.grey }} /></IconButton></Tooltip>
                 </>
               ) : (
                 <>
-                  <Tooltip title="استعادة"><IconButton onClick={() => handleUnarchive(spec.id)}><UnarchiveIcon sx={{ color: colors.success }} /></IconButton></Tooltip>
-                  <Tooltip title="حذف نهائي"><IconButton onClick={() => handleDeleteClick(spec.id)}><DeleteForeverIcon sx={{ color: colors.error }} /></IconButton></Tooltip>
+                  <Tooltip title="Restore"><IconButton onClick={() => handleUnarchive(spec.id)}><UnarchiveIcon sx={{ color: colors.success }} /></IconButton></Tooltip>
+                  <Tooltip title="Delete Permanently"><IconButton onClick={() => handleDeleteClick(spec.id)}><DeleteForeverIcon sx={{ color: colors.error }} /></IconButton></Tooltip>
                 </>
               )}
             </Box>
           </SpecializationItem>
         ))
       ) : (
-        <EmptyState message={searchQuery ? "لم يتم العثور على نتائج." : ""} tab={currentTab} />
+        <EmptyState message={searchQuery ? "No results found." : ""} tab={currentTab} />
       )}
 
       {/* Dialogs */}
@@ -343,12 +343,12 @@ export default function SpecializationsManagement() {
         fullWidth maxWidth="sm"
         PaperProps={{ sx: { bgcolor: colors.lightBlack, color: colors.white, borderRadius: '16px' } }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold' }}>{isAddDialogOpen ? 'إضافة اختصاص جديد' : 'تعديل الاختصاص'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>{isAddDialogOpen ? 'Add New Specialization' : 'Edit Specialization'}</DialogTitle>
         <DialogContent sx={{ pt: '20px!important', mt: 1 }}>
           <TextField
             autoFocus
             name="name"
-            label="نوع الاختصاص"
+            label="Specialization Type"
             fullWidth
             variant="filled"
             value={currentSpecialization?.name || ''}
@@ -359,7 +359,7 @@ export default function SpecializationsManagement() {
           />
           <TextField
             name="description"
-            label="شرح عن الاختصاص"
+            label="Specialization Description"
             fullWidth multiline rows={4}
             variant="filled"
             value={currentSpecialization?.description || ''}
@@ -369,13 +369,13 @@ export default function SpecializationsManagement() {
           />
         </DialogContent>
         <DialogActions sx={{ p: '16px 24px' }}>
-          <Button onClick={handleDialogClose(isAddDialogOpen ? setIsAddDialogOpen : setIsEditDialogOpen)} sx={{ color: colors.textLight }}>إلغاء</Button>
+          <Button onClick={handleDialogClose(isAddDialogOpen ? setIsAddDialogOpen : setIsEditDialogOpen)} sx={{ color: colors.textLight }}>Cancel</Button>
           <Button
             onClick={isAddDialogOpen ? handleAddNew : handleSaveChanges}
             variant="contained"
             sx={{ backgroundColor: colors.gold, color: colors.black, '&:hover': { backgroundColor: '#B4943C' } }}
           >
-            حفظ
+            Save
           </Button>
         </DialogActions>
       </Dialog>
@@ -385,8 +385,8 @@ export default function SpecializationsManagement() {
         open={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="تأكيد الحذف"
-        message="هل أنت متأكد أنك تريد حذف هذا الاختصاص نهائياً؟ لا يمكن التراجع عن هذا الإجراء."
+        title="Confirm Delete"
+        message="Are you sure you want to permanently delete this specialization? This action cannot be undone."
       />
 
       <Snackbar

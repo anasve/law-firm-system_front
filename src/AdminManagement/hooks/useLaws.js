@@ -13,7 +13,7 @@ export const useLaws = (currentTab, searchQuery) => {
     try {
       const token = getToken();
       if (!token) {
-        setError("يرجى تسجيل الدخول أولاً");
+        setError("Please log in first");
         setLoading(false);
         return;
       }
@@ -35,7 +35,7 @@ export const useLaws = (currentTab, searchQuery) => {
       setLaws(lawsData);
     } catch (err) {
       console.error("Error fetching laws:", err);
-      setError("حدث خطأ أثناء جلب القوانين");
+      setError("An error occurred while fetching laws");
       setLaws([]);
 
       if (err.response?.status === 401) {

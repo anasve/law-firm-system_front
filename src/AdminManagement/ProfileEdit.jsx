@@ -15,7 +15,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 
 import axios from 'axios';
 
-// --- الألوان ---
+// --- Colors ---
 const colors = {
   gold: '#D4AF37',
   black: '#141414',
@@ -24,7 +24,7 @@ const colors = {
   textSecondary: alpha('#FFFFFF', 0.7),
 };
 
-// --- العناصر المصممة ---
+// --- Styled Components ---
 const SectionCard = styled(Paper)(({ theme }) => ({
   backgroundColor: colors.lightBlack,
   padding: theme.spacing(4),
@@ -39,7 +39,7 @@ const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     color: colors.white,
     backgroundColor: 'rgba(0,0,0,0.2)',
-    fontFamily: 'Cairo, sans-serif',
+    fontFamily: 'Arial, sans-serif',
     '& fieldset': { borderColor: alpha(colors.white, 0.2) },
     '&:hover fieldset': { borderColor: alpha(colors.gold, 0.7) },
     '&.Mui-focused fieldset': { borderColor: colors.gold },
@@ -47,7 +47,7 @@ const StyledTextField = styled(TextField)({
   },
   '& .MuiInputLabel-root': {
     color: colors.textSecondary,
-    fontFamily: 'Cairo, sans-serif',
+    fontFamily: 'Arial, sans-serif',
   }
 });
 
@@ -75,7 +75,7 @@ export default function ProfileEdit() {
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
 
-  // --- جلب بيانات الملف الشخصي ---
+  // --- Fetch profile data ---
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('adminToken');
@@ -126,32 +126,32 @@ export default function ProfileEdit() {
         }
       );
 
-      alert("تم حفظ التغييرات!");
+      alert("Changes saved successfully!");
       setPasswords({ current: "", new: "", confirm: "" });
 
     } catch (error) {
-      console.error("خطأ أثناء حفظ التغييرات:", error);
-      alert("فشل في حفظ التغييرات، تحقق من صحة البيانات.");
+      console.error("Error saving changes:", error);
+      alert("Failed to save changes. Please check your data.");
     }
   };
 
   const handleCancel = () => setPasswords({ current: "", new: "", confirm: "" });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, fontFamily: 'Cairo, sans-serif' }}>
+    <Box sx={{ p: { xs: 2, md: 4 }, fontFamily: 'Arial, sans-serif', direction: 'ltr' }}>
       <Typography variant="h4" fontWeight="bold" sx={{ color: colors.white, mb: 4, textAlign: 'center' }}>
-        تعديل الملف الشخصي
+        Edit Profile
       </Typography>
 
       <form onSubmit={handleSave}>
         <Box sx={{ maxWidth: '900px', margin: '0 auto' }}>
-          {/* صورة المستخدم */}
+          {/* User Image */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
             <Box position="relative" display="inline-block" mb={2}>
               <Avatar sx={{ width: 120, height: 120, bgcolor: colors.gold, fontSize: 48, color: colors.black }}>
                 {profile.fullName.split(" ").map(w => w[0]).join("").slice(0, 2)}
               </Avatar>
-              <IconButton component="label" sx={{ position: 'absolute', bottom: 5, right: 5, bgcolor: alpha(colors.black, 0.7), '&:hover': { bgcolor: colors.black } }}>
+              <IconButton component="label" sx={{ position: 'absolute', bottom: 5, left: 5, bgcolor: alpha(colors.black, 0.7), '&:hover': { bgcolor: colors.black } }}>
                 <PhotoCameraIcon sx={{ color: colors.gold }} />
                 <input type="file" hidden />
               </IconButton>
@@ -159,28 +159,28 @@ export default function ProfileEdit() {
             <Typography fontWeight="bold" variant="h6" sx={{ color: colors.white }}>{profile.fullName}</Typography>
           </Box>
 
-          {/* البيانات الشخصية */}
+          {/* Personal Information */}
           <SectionCard>
-            <Typography variant="h6" fontWeight="bold" sx={{ color: colors.gold, mb: 3 }}>المعلومات الشخصية</Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: colors.gold, mb: 3 }}>Personal Information</Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
-                <StyledTextField fullWidth label="الاسم الكامل" name="fullName" value={profile.fullName} onChange={handleChange} />
+                <StyledTextField fullWidth label="Full Name" name="fullName" value={profile.fullName} onChange={handleChange} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <StyledTextField fullWidth label="البريد الإلكتروني" name="email" value={profile.email} onChange={handleChange} />
+                <StyledTextField fullWidth label="Email Address" name="email" value={profile.email} onChange={handleChange} />
               </Grid>
             </Grid>
           </SectionCard>
 
-          {/* تغيير كلمة المرور */}
+          {/* Change Password */}
           <SectionCard>
-            <Typography variant="h6" fontWeight="bold" sx={{ color: colors.gold, mb: 3 }}>تغيير كلمة المرور</Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: colors.gold, mb: 3 }}>Change Password</Typography>
             <Grid container spacing={3}>
               {['current', 'new', 'confirm'].map((field, index) => (
                 <Grid item xs={12} md={4} key={field}>
                   <StyledTextField
                     fullWidth
-                    label={field === 'current' ? 'كلمة المرور الحالية' : field === 'new' ? 'كلمة المرور الجديدة' : 'تأكيد كلمة المرور'}
+                    label={field === 'current' ? 'Current Password' : field === 'new' ? 'New Password' : 'Confirm Password'}
                     name={field}
                     type={showPassword[field] ? "text" : "password"}
                     value={passwords[field]}
@@ -198,18 +198,18 @@ export default function ProfileEdit() {
                 </Grid>
               ))}
             </Grid>
-            <Tooltip title="كلمة المرور يجب أن تحتوي على الأقل 8 أحرف، وتتضمن حرف كبير ورقم ورمز خاص.">
+            <Tooltip title="Password must contain at least 8 characters, including an uppercase letter, a number, and a special character.">
               <Box display="flex" alignItems="center" justifyContent="flex-end" mt={2} sx={{ color: colors.textSecondary, cursor: 'pointer' }}>
-                <Typography variant="caption" sx={{ mr: 1 }}>إرشادات كلمة المرور</Typography>
+                <Typography variant="caption" sx={{ mr: 1 }}>Password Guidelines</Typography>
                 <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
               </Box>
             </Tooltip>
           </SectionCard>
 
-          {/* أزرار */}
+          {/* Buttons */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 2 }}>
-            <ActionButton type="submit" startIcon={<SaveIcon />}>حفظ التغييرات</ActionButton>
-            <ActionButton variant="outlined" startIcon={<CancelIcon />} onClick={handleCancel}>إلغاء</ActionButton>
+            <ActionButton type="submit" startIcon={<SaveIcon />}>Save Changes</ActionButton>
+            <ActionButton variant="outlined" startIcon={<CancelIcon />} onClick={handleCancel}>Cancel</ActionButton>
           </Box>
         </Box>
       </form>

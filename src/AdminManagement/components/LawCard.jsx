@@ -62,7 +62,7 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
         />
         <Divider sx={{ my: 2 }} />
         <Typography variant="subtitle1" fontWeight="bold" sx={{ color: colors.textDark }}>
-          ملخص القانون
+          Law Summary
         </Typography>
         <Typography
           variant="body1"
@@ -76,7 +76,7 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
           {law.summary}
         </Typography>
         <Typography variant="subtitle1" fontWeight="bold" sx={{ color: colors.textDark }}>
-          شرح كامل عن القانون
+          Full Law Description
         </Typography>
         <Typography
           variant="body1"
@@ -100,17 +100,17 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
         >
           {law.status === "published" && (
             <>
-              <Tooltip title="تعديل">
+              <Tooltip title="Edit">
                 <IconButton onClick={() => onEdit(law)}>
                   <EditIcon sx={{ color: colors.gold }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="إلغاء النشر">
+              <Tooltip title="Unpublish">
                 <IconButton onClick={() => handleStatusChange("unpublish")}>
                   <CloudOffOutlinedIcon sx={{ color: colors.info }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="أرشفة">
+              <Tooltip title="Archive">
                 <IconButton onClick={() => handleStatusChange("archive")}>
                   <ArchiveIcon sx={{ color: colors.grey }} />
                 </IconButton>
@@ -119,17 +119,17 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
           )}
           {law.status === "draft" && (
             <>
-              <Tooltip title="تعديل">
+              <Tooltip title="Edit">
                 <IconButton onClick={() => onEdit(law)}>
                   <EditIcon sx={{ color: colors.gold }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="نشر">
+              <Tooltip title="Publish">
                 <IconButton onClick={() => handleStatusChange("publish")}>
                   <CloudUploadOutlinedIcon sx={{ color: colors.success }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="أرشفة">
+              <Tooltip title="Archive">
                 <IconButton onClick={() => handleStatusChange("archive")}>
                   <ArchiveIcon sx={{ color: colors.grey }} />
                 </IconButton>
@@ -138,12 +138,12 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
           )}
           {law.status === "archived" && (
             <>
-              <Tooltip title="استعادة">
+              <Tooltip title="Restore">
                 <IconButton onClick={() => handleStatusChange("restore")}>
                   <UnarchiveIcon sx={{ color: colors.success }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف نهائي">
+              <Tooltip title="Delete Permanently">
                 <IconButton onClick={() => handleStatusChange("delete")}>
                   <DeleteForeverIcon sx={{ color: colors.error }} />
                 </IconButton>

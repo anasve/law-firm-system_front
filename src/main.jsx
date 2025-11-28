@@ -6,9 +6,9 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
-  direction: "rtl",
+  direction: "ltr",
   typography: {
-    fontFamily: "Tajawal, Arial, sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
 });
 

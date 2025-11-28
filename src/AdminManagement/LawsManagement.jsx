@@ -63,7 +63,7 @@ const api = axios.create({
 // Add request interceptor for auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("adminToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -89,7 +89,7 @@ const SearchTextField = styled(TextField)({
   "& .MuiInput-underline:after": { borderBottomColor: colors.gold },
   "& .MuiInputBase-input": {
     color: colors.white,
-    fontFamily: "Cairo, sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
 });
 
@@ -120,7 +120,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minHeight: "48px",
   color: alpha(colors.white, 0.7),
   fontWeight: "bold",
-  fontFamily: "Cairo, sans-serif",
+  fontFamily: "Arial, sans-serif",
   "&.Mui-selected": { color: colors.gold },
   textTransform: "none",
   fontSize: "0.8rem",
@@ -129,10 +129,10 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
 const EmptyState = ({ message, tab }) => {
   const messages = {
-    0: "لا توجد قوانين تطابق بحثك",
-    1: "لا توجد قوانين منشورة حالياً",
-    2: "لا توجد قوانين غير منشورة حالياً",
-    3: "الأرشيف فارغ حالياً",
+    0: "No laws match your search",
+    1: "No published laws currently",
+    2: "No unpublished laws currently",
+    3: "Archive is currently empty",
   };
   return (
     <Box sx={{ textAlign: "center", p: 8, color: colors.textLight }}>
@@ -167,15 +167,15 @@ export default function LawsManagement() {
   const handleAuth = async () => {
     try {
       // First check if we already have a token
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("adminToken");
       if (token) return true;
 
       // If no token, redirect to login (don't auto-login with hardcoded credentials)
-      showSnackbar("يرجى تسجيل الدخول أولاً", "error");
+      showSnackbar("Please log in first", "error");
       return false;
     } catch (error) {
       console.error("Authentication failed:", error);
-      showSnackbar("فشل في المصادقة. يرجى تسجيل الدخول.", "error");
+      showSnackbar("Authentication failed. Please log in.", "error");
       return false;
     }
   };
@@ -192,9 +192,9 @@ export default function LawsManagement() {
       }
 
       let endpoint = "/laws";
-      if (currentTab === 1) endpoint = "/laws?status=published";
-      else if (currentTab === 2) endpoint = "/laws?status=draft";
-      else if (currentTab === 3) endpoint = "/laws?status=archived";
+      if (currentTab === 1) endpoint = "/laws/published";
+      else if (currentTab === 2) endpoint = "/laws/draft";
+      else if (currentTab === 3) endpoint = "/laws/archived";
 
       const params = searchQuery.trim() ? { search: searchQuery.trim() } : {};
       const response = await api.get(endpoint, { params });
@@ -204,12 +204,12 @@ export default function LawsManagement() {
       setLaws(lawsData);
     } catch (error) {
       console.error("Error fetching laws:", error);
-      showSnackbar("حدث خطأ أثناء جلب القوانين", "error");
+      showSnackbar("An error occurred while fetching laws", "error");
       setLaws([]);
       
       // If unauthorized, clear token and try to re-authenticate
       if (error.response?.status === 401) {
-        localStorage.removeItem("authToken");
+        localStorage.removeItem("adminToken");
         await handleAuth();
         fetchLaws(); // Retry
       }
@@ -241,8 +241,8 @@ export default function LawsManagement() {
   // Update law status (publish/unpublish/archive/restore/delete)
   const updateLawStatus = async (id, action) => {
     try {
-      let endpoint = `/laws/${id}`;
-      let method = "put";
+      let endpoint = `/laws/${id}/toggle-status`;
+      let method = "post";
       let payload = {};
 
       switch (action) {
@@ -256,24 +256,27 @@ export default function LawsManagement() {
           payload.status = "archived";
           break;
         case "restore":
-          payload.status = "draft";
+          method = "put";
+          endpoint = `/laws/${id}/restore`;
+          payload = null;
           break;
         case "delete":
           method = "delete";
           endpoint = `/laws/${id}/force`;
+          payload = null;
           break;
         default:
           throw new Error("Invalid action");
       }
 
-      await api[method](endpoint, method !== "delete" ? payload : null);
+      await api[method](endpoint, payload);
 
       const messages = {
-        publish: "تم نشر القانون بنجاح",
-        unpublish: "تم إلغاء نشر القانون",
-        archive: "تم نقل القانون إلى الأرشيف",
-        restore: "تمت استعادة القانون (غير منشور)",
-        delete: "تم حذف القانون نهائياً",
+        publish: "Law published successfully",
+        unpublish: "Law unpublished successfully",
+        archive: "Law moved to archive",
+        restore: "Law restored (unpublished)",
+        delete: "Law deleted permanently",
       };
 
       showSnackbar(
@@ -284,7 +287,7 @@ export default function LawsManagement() {
       fetchLaws(); // Refresh the list
     } catch (error) {
       console.error(`Error ${action} law:`, error);
-      showSnackbar(`فشل في ${action} القانون`, "error");
+      showSnackbar(`Failed to ${action} law`, "error");
     }
   };
 
@@ -302,12 +305,12 @@ export default function LawsManagement() {
   const handleSaveChanges = async () => {
     try {
       await api.put(`/laws/${currentLaw.id}`, currentLaw);
-      showSnackbar("تم حفظ التعديلات بنجاح", "success");
+      showSnackbar("Changes saved successfully", "success");
       fetchLaws();
       handleEditDialogClose();
     } catch (error) {
       console.error("Error updating law:", error);
-      showSnackbar("فشل في حفظ التعديلات", "error");
+      showSnackbar("Failed to save changes", "error");
     }
   };
 
@@ -322,12 +325,12 @@ export default function LawsManagement() {
   const handleAddNewLaw = async () => {
     try {
       await api.post("/laws", newLawData);
-      showSnackbar("تمت إضافة قانون جديد بنجاح", "success");
+      showSnackbar("New law added successfully", "success");
       fetchLaws();
       handleAddDialogClose();
     } catch (error) {
       console.error("Error adding law:", error);
-      showSnackbar("فشل في إضافة القانون", "error");
+      showSnackbar("Failed to add law", "error");
     }
   };
 
@@ -351,19 +354,19 @@ export default function LawsManagement() {
     <Box
       sx={{
         p: { xs: 2, md: 4 },
-        fontFamily: "Cairo, sans-serif",
+        fontFamily: "Arial, sans-serif",
         color: colors.white,
       }}
     >
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>
-        إدارة القوانين والتشريعات
+        Laws and Legislation Management
       </Typography>
 
       {/* Search and add */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 4, gap: 3 }}>
         <SearchTextField
           variant="standard"
-          placeholder="ابحث في العنوان، الفئة، المحتوى..."
+          placeholder="Search in title, category, content..."
           sx={{ flexGrow: 1 }}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -388,7 +391,7 @@ export default function LawsManagement() {
             "&:hover": { backgroundColor: "#B4943C" },
           }}
         >
-          إضافة قانون
+          Add Law
         </Button>
       </Box>
 
@@ -396,7 +399,7 @@ export default function LawsManagement() {
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <StyledTabs value={currentTab} onChange={handleTabChange}>
           <StyledTab
-            label="الكل"
+            label="All"
             icon={
               <Chip
                 label={allActiveLawsCount}
@@ -411,7 +414,7 @@ export default function LawsManagement() {
             }
           />
           <StyledTab
-            label="منشورة"
+            label="Published"
             icon={
               <Chip
                 label={publishedLawsCount}
@@ -426,7 +429,7 @@ export default function LawsManagement() {
             }
           />
           <StyledTab
-            label="غير منشورة"
+            label="Unpublished"
             icon={
               <Chip
                 label={unpublishedLawsCount}
@@ -441,7 +444,7 @@ export default function LawsManagement() {
             }
           />
           <StyledTab
-            label="الأرشيف"
+            label="Archive"
             icon={
               <Chip
                 label={archivedLawsCount}
@@ -491,7 +494,7 @@ export default function LawsManagement() {
                 fontWeight="bold"
                 sx={{ color: colors.textDark }}
               >
-                ملخص القانون
+                Law Summary
               </Typography>
               <Typography
                 variant="body1"
@@ -509,7 +512,7 @@ export default function LawsManagement() {
                 fontWeight="bold"
                 sx={{ color: colors.textDark }}
               >
-                شرح كامل عن القانون
+                Full Law Description
               </Typography>
               <Typography
                 variant="body1"
@@ -533,19 +536,19 @@ export default function LawsManagement() {
               >
                 {law.status === "published" && (
                   <>
-                    <Tooltip title="تعديل">
+                    <Tooltip title="Edit">
                       <IconButton onClick={() => handleEditClick(law)}>
                         <EditIcon sx={{ color: colors.gold }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="إلغاء النشر">
+                    <Tooltip title="Unpublish">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "unpublish")}
                       >
                         <CloudOffOutlinedIcon sx={{ color: colors.info }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="أرشفة">
+                    <Tooltip title="Archive">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "archive")}
                       >
@@ -556,12 +559,12 @@ export default function LawsManagement() {
                 )}
                 {law.status === "draft" && (
                   <>
-                    <Tooltip title="تعديل">
+                    <Tooltip title="Edit">
                       <IconButton onClick={() => handleEditClick(law)}>
                         <EditIcon sx={{ color: colors.gold }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="نشر">
+                    <Tooltip title="Publish">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "publish")}
                       >
@@ -570,7 +573,7 @@ export default function LawsManagement() {
                         />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="أرشفة">
+                    <Tooltip title="Archive">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "archive")}
                       >
@@ -581,14 +584,14 @@ export default function LawsManagement() {
                 )}
                 {law.status === "archived" && (
                   <>
-                    <Tooltip title="استعادة">
+                    <Tooltip title="Restore">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "restore")}
                       >
                         <UnarchiveIcon sx={{ color: colors.success }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="حذف نهائي">
+                    <Tooltip title="Delete Permanently">
                       <IconButton
                         onClick={() => updateLawStatus(law.id, "delete")}
                       >
@@ -603,7 +606,7 @@ export default function LawsManagement() {
         ))
       ) : (
         <EmptyState
-          message={searchQuery ? "لم يتم العثور على نتائج لبحثك." : ""}
+          message={searchQuery ? "No results found for your search." : ""}
           tab={currentTab}
         />
       )}
@@ -622,12 +625,12 @@ export default function LawsManagement() {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: "bold" }}>إضافة قانون جديد</DialogTitle>
+        <DialogTitle sx={{ fontWeight: "bold" }}>Add New Law</DialogTitle>
         <DialogContent sx={{ pt: "20px !important", mt: 1 }}>
           <TextField
             autoFocus
             name="title"
-            label="عنوان القانون"
+            label="Law Title"
             fullWidth
             variant="filled"
             value={newLawData.title}
@@ -638,7 +641,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="category"
-            label="الفئة"
+            label="Category"
             fullWidth
             variant="filled"
             value={newLawData.category}
@@ -649,7 +652,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="summary"
-            label="ملخص القانون"
+            label="Law Summary"
             fullWidth
             multiline
             rows={3}
@@ -662,7 +665,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="fullContent"
-            label="شرح كامل"
+            label="Full Description"
             fullWidth
             multiline
             rows={6}
@@ -679,7 +682,7 @@ export default function LawsManagement() {
             variant="outlined"
             sx={{ color: colors.white, borderColor: colors.white }}
           >
-            إلغاء
+            Cancel
           </Button>
           <Button
             onClick={handleAddNewLaw}
@@ -690,7 +693,7 @@ export default function LawsManagement() {
               "&:hover": { backgroundColor: "#B4943C" },
             }}
           >
-            حفظ
+            Save
           </Button>
         </DialogActions>
       </Dialog>
@@ -709,12 +712,12 @@ export default function LawsManagement() {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: "bold" }}>تعديل القانون</DialogTitle>
+        <DialogTitle sx={{ fontWeight: "bold" }}>Edit Law</DialogTitle>
         <DialogContent sx={{ pt: "20px !important", mt: 1 }}>
           <TextField
             autoFocus
             name="title"
-            label="عنوان القانون"
+            label="Law Title"
             fullWidth
             variant="filled"
             value={currentLaw?.title || ""}
@@ -725,7 +728,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="category"
-            label="الفئة"
+            label="Category"
             fullWidth
             variant="filled"
             value={currentLaw?.category || ""}
@@ -736,7 +739,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="summary"
-            label="ملخص القانون"
+            label="Law Summary"
             fullWidth
             multiline
             rows={3}
@@ -749,7 +752,7 @@ export default function LawsManagement() {
           />
           <TextField
             name="fullContent"
-            label="شرح كامل"
+            label="Full Description"
             fullWidth
             multiline
             rows={6}
@@ -766,7 +769,7 @@ export default function LawsManagement() {
             variant="outlined"
             sx={{ color: colors.white, borderColor: colors.white }}
           >
-            إلغاء
+            Cancel
           </Button>
           <Button
             onClick={handleSaveChanges}
@@ -777,7 +780,7 @@ export default function LawsManagement() {
               "&:hover": { backgroundColor: "#B4943C" },
             }}
           >
-            حفظ التعديلات
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
@@ -791,7 +794,7 @@ export default function LawsManagement() {
       >
         <Alert
           severity={snackbar.severity}
-          sx={{ fontFamily: "Cairo, sans-serif" }}
+          sx={{ fontFamily: "Arial, sans-serif" }}
         >
           {snackbar.message}
         </Alert>
