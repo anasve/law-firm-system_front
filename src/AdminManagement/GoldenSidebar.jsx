@@ -109,16 +109,20 @@ export default function GoldenSidebar() {
     <Box
       sx={{
         width: 280,
-        minHeight: '100vh',
+        height: '100vh',
         background: colors.black,
         boxShadow: '2px 0 16px 0 rgba(0,0,0,0.5)',
         display: 'flex',
         flexDirection: 'column',
         p: 2,
         flexShrink: 0,
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        overflowY: 'auto',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, mb: 2, flexShrink: 0 }}>
         <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, mr: 2 }}>
           <SchoolIcon sx={{ fontSize: 30, color: colors.black }} />
         </Avatar>
@@ -127,7 +131,7 @@ export default function GoldenSidebar() {
         </Typography>
       </Box>
 
-      <List component="nav" sx={{ flex: 1 }}>
+      <List component="nav" sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {menuItems.map((item) => (
           <StyledListItemButton
             key={item.text}
@@ -143,7 +147,7 @@ export default function GoldenSidebar() {
         ))}
       </List>
 
-      <Box>
+      <Box sx={{ flexShrink: 0, mt: 'auto' }}>
         <Divider sx={{ my: 1, borderColor: alpha(colors.gold, 0.2) }} />
         <StyledListItemButton onClick={handleLogout} disabled={loggingOut}>
           <ListItemIcon>
@@ -162,6 +166,7 @@ export default function GoldenSidebar() {
           py: 2,
           color: alpha(colors.white, 0.5),
           fontFamily: 'Arial, sans-serif',
+          flexShrink: 0,
         }}
       >
         <Typography variant="caption">© {new Date().getFullYear()} All rights reserved</Typography>

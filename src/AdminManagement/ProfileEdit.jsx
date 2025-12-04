@@ -71,26 +71,55 @@ const ActionButton = styled(Button)(({ theme, variant = 'contained' }) => ({
 export default function ProfileEdit() {
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({ fullName: "", email: "" });
+  const [profile, setProfile] = useState({ fullName: "", email: "", image: null });
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
+  const [imagePreview, setImagePreview] = useState(null);
 
   // --- Fetch profile data ---
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('adminToken');
-      if (!token) return navigate('/login');
+      if (!token) {
+        navigate('/');
+        return;
+      }
 
       try {
-        const { data } = await axios.get('http://127.0.0.1:8000/api/admin/profile', {
+        const response = await axios.get('http://127.0.0.1:8000/api/admin/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        // Handle different response structures
+        const adminData = response.data.data || response.data.admin || response.data || {};
+        
+        console.log('Profile data received:', adminData);
+        
+        // Get image URL
+        let imageUrl = adminData.image_url || adminData.image || adminData.photo || null;
+        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+          if (imageUrl.startsWith('/')) {
+            imageUrl = `http://127.0.0.1:8000${imageUrl}`;
+          } else {
+            imageUrl = `http://127.0.0.1:8000/${imageUrl}`;
+          }
+        }
+        
         setProfile({
-          fullName: data.name ?? '',
-          email: data.email ?? ''
+          fullName: adminData.name || adminData.full_name || adminData.fullName || '',
+          email: adminData.email || '',
+          image: imageUrl
         });
+        
+        setImagePreview(imageUrl);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem('adminToken');
+          navigate('/');
+        } else {
+          alert('Failed to load profile data. Please try again.');
+        }
       }
     };
 
@@ -109,29 +138,125 @@ export default function ProfileEdit() {
   const handleSave = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('adminToken');
-    if (!token) return navigate('/login');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+
+    // Validate password if provided
+    if (passwords.new || passwords.confirm || passwords.current) {
+      if (!passwords.current) {
+        alert('Please enter your current password to change it.');
+        return;
+      }
+      if (!passwords.new) {
+        alert('Please enter a new password.');
+        return;
+      }
+      if (passwords.new !== passwords.confirm) {
+        alert('New password and confirm password do not match.');
+        return;
+      }
+      if (passwords.new.length < 8) {
+        alert('Password must be at least 8 characters long.');
+        return;
+      }
+    }
 
     try {
-      await axios.put(
+      const formData = new FormData();
+      formData.append('name', profile.fullName || '');
+      formData.append('email', profile.email || '');
+      
+      // Only add password fields if they are provided
+      if (passwords.current && passwords.new) {
+        formData.append('current_password', passwords.current);
+        formData.append('password', passwords.new);
+        formData.append('password_confirmation', passwords.confirm);
+      }
+      
+      // Only add image if it's a new file
+      if (profile.image && profile.image instanceof File) {
+        formData.append('image', profile.image);
+      }
+
+      // Use POST with _method=PUT for Laravel compatibility
+      formData.append('_method', 'PUT');
+
+      console.log('Sending profile update:', {
+        name: profile.fullName,
+        email: profile.email,
+        hasPassword: !!(passwords.current && passwords.new),
+        hasImage: profile.image instanceof File
+      });
+
+      const response = await axios.post(
         'http://127.0.0.1:8000/api/admin/profile',
+        formData,
         {
-          name: profile.fullName,
-          email: profile.email,
-          current_password: passwords.current,
-          new_password: passwords.new,
-          confirm_password: passwords.confirm,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          },
         }
       );
 
+      console.log('Profile update response:', response.data);
+
       alert("Changes saved successfully!");
       setPasswords({ current: "", new: "", confirm: "" });
+      
+      // Refresh profile data
+      const refreshResponse = await axios.get('http://127.0.0.1:8000/api/admin/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const adminData = refreshResponse.data.data || refreshResponse.data.admin || refreshResponse.data || {};
+      console.log('Refreshed profile data:', adminData);
+      
+      let imageUrl = adminData.image_url || adminData.image || adminData.photo || null;
+      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+        if (imageUrl.startsWith('/')) {
+          imageUrl = `http://127.0.0.1:8000${imageUrl}`;
+        } else {
+          imageUrl = `http://127.0.0.1:8000/${imageUrl}`;
+        }
+      }
+      
+      setProfile({
+        fullName: adminData.name || adminData.full_name || adminData.fullName || '',
+        email: adminData.email || '',
+        image: imageUrl
+      });
+      setImagePreview(imageUrl);
 
     } catch (error) {
       console.error("Error saving changes:", error);
-      alert("Failed to save changes. Please check your data.");
+      console.error("Error response:", error.response?.data);
+      
+      let errorMessage = "Failed to save changes. Please check your data.";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.errors) {
+          const errors = errorData.errors;
+          const errorMessages = [];
+          Object.keys(errors).forEach(key => {
+            if (Array.isArray(errors[key])) {
+              errorMessages.push(...errors[key]);
+            } else {
+              errorMessages.push(errors[key]);
+            }
+          });
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('\n');
+          }
+        }
+      }
+      alert(errorMessage);
     }
   };
 
@@ -148,15 +273,34 @@ export default function ProfileEdit() {
           {/* User Image */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
             <Box position="relative" display="inline-block" mb={2}>
-              <Avatar sx={{ width: 120, height: 120, bgcolor: colors.gold, fontSize: 48, color: colors.black }}>
-                {profile.fullName.split(" ").map(w => w[0]).join("").slice(0, 2)}
+              <Avatar 
+                src={imagePreview || profile.image} 
+                sx={{ width: 120, height: 120, bgcolor: colors.gold, fontSize: 48, color: colors.black }}
+              >
+                {profile.fullName ? profile.fullName.split(" ").map(w => w[0]).join("").slice(0, 2) : 'A'}
               </Avatar>
-              <IconButton component="label" sx={{ position: 'absolute', bottom: 5, left: 5, bgcolor: alpha(colors.black, 0.7), '&:hover': { bgcolor: colors.black } }}>
+              <IconButton 
+                component="label" 
+                sx={{ position: 'absolute', bottom: 5, left: 5, bgcolor: alpha(colors.black, 0.7), '&:hover': { bgcolor: colors.black } }}
+              >
                 <PhotoCameraIcon sx={{ color: colors.gold }} />
-                <input type="file" hidden />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  hidden 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      setProfile(prev => ({ ...prev, image: file }));
+                      setImagePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
               </IconButton>
             </Box>
-            <Typography fontWeight="bold" variant="h6" sx={{ color: colors.white }}>{profile.fullName}</Typography>
+            <Typography fontWeight="bold" variant="h6" sx={{ color: colors.white }}>
+              {profile.fullName || 'Admin User'}
+            </Typography>
           </Box>
 
           {/* Personal Information */}

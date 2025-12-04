@@ -6,6 +6,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -13,6 +14,8 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import FindInPageOutlinedIcon from '@mui/icons-material/FindInPageOutlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HomeIcon from '@mui/icons-material/Home';
 
 const colors = {
   gold: '#D4AF37',
@@ -94,10 +97,10 @@ function DescriptionDialog({ open, onClose, specialization }) {
   if (!specialization) return null;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: colors.lightBlack, color: colors.white, borderRadius: '12px' } }}>
-      <DialogTitle sx={{ fontWeight: 'bold' }}>Description: {specialization.name}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 'bold' }}>Description: {specialization.name || 'Specialization'}</DialogTitle>
       <DialogContent>
         <Typography sx={{ whiteSpace: 'pre-line', lineHeight: 1.8, color: colors.textLight, pt: 1 }}>
-          {specialization.description}
+          {specialization.description || 'No description available.'}
         </Typography>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
@@ -108,7 +111,9 @@ function DescriptionDialog({ open, onClose, specialization }) {
 }
 
 export default function SpecializationsManagement() {
+  const navigate = useNavigate();
   const [specializations, setSpecializations] = useState([]);
+  const [archivedSpecializations, setArchivedSpecializations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTab, setCurrentTab] = useState(0);
@@ -120,31 +125,100 @@ export default function SpecializationsManagement() {
   const [currentSpecialization, setCurrentSpecialization] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
-  useEffect(() => {
-    const fetchSpecializations = async () => {
-      try {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-          showSnackbar('Please log in first', 'error');
-          return;
-        }
-        const [activeRes, archivedRes] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/admin/specializations', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://127.0.0.1:8000/api/admin/specializations-archived', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        // وضع حالة status حسب الارشيف ام لا
-        const activeWithStatus = activeRes.data.map(s => ({ ...s, status: 'active' }));
-        const archivedWithStatus = archivedRes.data.map(s => ({ ...s, status: 'archived' }));
-        setSpecializations([...activeWithStatus, ...archivedWithStatus]);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        showSnackbar('Failed to load data', 'error');
-      } finally {
-        setLoading(false);
+  const fetchSpecializations = async () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/admin/specializations', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSpecializations(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch specializations:', error);
+      // Always set to empty array on error to prevent filter errors
+      setSpecializations([]);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('adminToken');
+        navigate('/login');
+      } else {
+        showSnackbar('Failed to load specializations', 'error');
       }
+    }
+  };
+
+  const fetchArchivedSpecializations = async () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/admin/specializations-archived/', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Try different possible data structures
+      let data = [];
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response.data && Array.isArray(response.data.specializations)) {
+        data = response.data.specializations;
+      } else if (response.data && typeof response.data === 'object') {
+        // If it's an object, try to extract array from it
+        const keys = Object.keys(response.data);
+        if (keys.length > 0 && Array.isArray(response.data[keys[0]])) {
+          data = response.data[keys[0]];
+        }
+      }
+      
+      setArchivedSpecializations(data);
+    } catch (error) {
+      console.error('Failed to fetch archived specializations:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      // Always set to empty array on error to prevent filter errors
+      setArchivedSpecializations([]);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('adminToken');
+        navigate('/login');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchSpecializations(),
+        fetchArchivedSpecializations()
+      ]);
+      setLoading(false);
     };
-    fetchSpecializations();
-  }, []);
+    loadData();
+  }, [navigate]);
+
+  useEffect(() => {
+    // Always fetch when tab changes, regardless of loading state
+    if (currentTab === 1) {
+      console.log('Switching to Archive tab, fetching archived specializations...');
+      fetchArchivedSpecializations();
+    }
+    // Don't refetch active list when switching to active tab, it's already loaded
+  }, [currentTab]);
 
   const showSnackbar = (message, severity) => setSnackbar({ open: true, message, severity });
 
@@ -153,28 +227,44 @@ export default function SpecializationsManagement() {
   const handleArchive = async (id) => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
       await axios.delete(`http://127.0.0.1:8000/api/admin/specializations/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSpecializations(prev => prev.map(s => s.id === id ? { ...s, status: 'archived' } : s));
-      showSnackbar('Specialization moved to archive', 'info');
+      // Refetch both lists to ensure UI consistency
+      await Promise.all([
+        fetchSpecializations(),
+        fetchArchivedSpecializations()
+      ]);
+      alert('Specialization archived successfully');
     } catch (error) {
       console.error('Archive failed:', error);
-      showSnackbar('Failed to archive specialization', 'error');
+      alert(error?.response?.data?.message || 'Failed to archive specialization');
     }
   };
 
   const handleUnarchive = async (id) => {
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.put(`http://127.0.0.1:8000/api/admin/specializations/${id}/restore`, {}, {
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      await axios.put(`http://127.0.0.1:8000/api/admin/specializations/${id}/restore`, null, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSpecializations(prev => prev.map(s => s.id === id ? { ...s, status: 'active' } : s));
-      showSnackbar('Specialization restored successfully', 'success');
+      // Refetch both lists to ensure UI consistency
+      await Promise.all([
+        fetchSpecializations(),
+        fetchArchivedSpecializations()
+      ]);
+      alert('Specialization restored successfully');
     } catch (err) {
       console.error('Restore failed:', err);
-      showSnackbar('Failed to restore specialization', 'error');
+      alert(err?.response?.data?.message || 'Failed to restore specialization');
     }
   };
 
@@ -186,14 +276,19 @@ export default function SpecializationsManagement() {
   const handleConfirmDelete = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
       await axios.delete(`http://127.0.0.1:8000/api/admin/specializations/${itemToDelete}/force`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSpecializations(prev => prev.filter(s => s.id !== itemToDelete));
-      showSnackbar('Specialization deleted permanently', 'error');
+      // Refetch archived list after deletion
+      await fetchArchivedSpecializations();
+      alert('Specialization deleted permanently successfully');
     } catch (err) {
       console.error('Delete failed:', err);
-      showSnackbar('Failed to delete specialization', 'error');
+      alert(err?.response?.data?.message || 'Failed to delete specialization');
     } finally {
       setIsConfirmOpen(false);
       setItemToDelete(null);
@@ -223,6 +318,10 @@ export default function SpecializationsManagement() {
   const handleSaveChanges = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
       const response = await axios.put(
         `http://127.0.0.1:8000/api/admin/specializations/${currentSpecialization.id}`,
         {
@@ -231,30 +330,68 @@ export default function SpecializationsManagement() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSpecializations(prev =>
-        prev.map(s => (s.id === currentSpecialization.id ? { ...response.data, status: s.status } : s))
-      );
+      // Refetch lists to ensure UI consistency
+      await Promise.all([
+        fetchSpecializations(),
+        fetchArchivedSpecializations()
+      ]);
       handleDialogClose(setIsEditDialogOpen)();
       showSnackbar('Changes saved successfully!', 'success');
     } catch (error) {
       console.error('Failed to save changes:', error);
-      showSnackbar('Failed to save changes', 'error');
+      let errorMessage = 'Failed to save changes';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        const errorMessages = [];
+        Object.keys(error.response.data.errors).forEach(key => {
+          if (Array.isArray(error.response.data.errors[key])) {
+            errorMessages.push(...error.response.data.errors[key]);
+          } else {
+            errorMessages.push(error.response.data.errors[key]);
+          }
+        });
+        if (errorMessages.length > 0) {
+          errorMessage = errorMessages.join('\n');
+        }
+      }
+      showSnackbar(errorMessage, 'error');
     }
   };
 
   const handleAddNew = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
       const response = await axios.post('http://127.0.0.1:8000/api/admin/specializations', currentSpecialization, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const newSpec = { ...response.data, status: 'active' };
-      setSpecializations(prev => [newSpec, ...prev]);
+      // Refetch lists to ensure UI consistency
+      await fetchSpecializations();
       handleDialogClose(setIsAddDialogOpen)();
       showSnackbar('Specialization added successfully!', 'success');
     } catch (error) {
       console.error('Failed to add specialization:', error);
-      showSnackbar('Failed to add specialization', 'error');
+      let errorMessage = 'Failed to add specialization';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        const errorMessages = [];
+        Object.keys(error.response.data.errors).forEach(key => {
+          if (Array.isArray(error.response.data.errors[key])) {
+            errorMessages.push(...error.response.data.errors[key]);
+          } else {
+            errorMessages.push(error.response.data.errors[key]);
+          }
+        });
+        if (errorMessages.length > 0) {
+          errorMessage = errorMessages.join('\n');
+        }
+      }
+      showSnackbar(errorMessage, 'error');
     }
   };
 
@@ -265,13 +402,29 @@ export default function SpecializationsManagement() {
     return !q || s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q));
   };
 
-  const activeSpecializations = specializations.filter(s => s.status === 'active' && searchFilter(s));
-  const archivedSpecializations = specializations.filter(s => s.status === 'archived' && searchFilter(s));
-  const specializationsToDisplay = currentTab === 0 ? activeSpecializations : archivedSpecializations;
+  const filteredSpecializations = currentTab === 0
+    ? (Array.isArray(specializations) ? specializations : []).filter(searchFilter)
+    : (Array.isArray(archivedSpecializations) ? archivedSpecializations : []).filter(searchFilter);
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, fontFamily: 'Arial, sans-serif', color: colors.white, bgcolor: colors.black, minHeight: '100vh', direction: 'ltr' }}>
-      <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>Specializations Management</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h5" fontWeight="bold">Specializations Management</Typography>
+        {currentTab === 1 && (
+          <Button
+            variant="outlined"
+            startIcon={<HomeIcon />}
+            onClick={() => navigate('/dashboard')}
+            sx={{
+              color: colors.gold,
+              borderColor: colors.gold,
+              '&:hover': { borderColor: colors.gold, backgroundColor: alpha(colors.gold, 0.1) }
+            }}
+          >
+            Return to Home
+          </Button>
+        )}
+      </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
         <SearchTextField
           variant="standard"
@@ -284,19 +437,21 @@ export default function SpecializationsManagement() {
             startAdornment: (<InputAdornment position="start"><SearchIcon sx={{ color: alpha(colors.white, 0.6) }} /></InputAdornment>)
           }}
         />
-        <Button
-          onClick={handleAddClick}
-          variant="contained"
-          startIcon={<AddIcon />}
-          sx={{ backgroundColor: colors.gold, color: colors.black, fontWeight: 'bold', padding: '10px 24px', borderRadius: '12px', '&:hover': { backgroundColor: '#B4943C' } }}
-        >
-          Add Specialization
-        </Button>
+        {currentTab === 0 && (
+          <Button
+            onClick={handleAddClick}
+            variant="contained"
+            startIcon={<AddIcon />}
+            sx={{ backgroundColor: colors.gold, color: colors.black, fontWeight: 'bold', padding: '10px 24px', borderRadius: '12px', '&:hover': { backgroundColor: '#B4943C' } }}
+          >
+            Add Specialization
+          </Button>
+        )}
       </Box>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <StyledTabs value={currentTab} onChange={handleTabChange}>
-          <StyledTab label="Active Specializations" icon={<Chip label={activeSpecializations.length} size="small" sx={{ bgcolor: colors.success, color: colors.white, height: '18px', fontSize: '0.7rem' }} />} />
-          <StyledTab label="Archive" icon={<Chip label={archivedSpecializations.length} size="small" sx={{ height: '18px', fontSize: '0.7rem' }} />} />
+          <StyledTab label="Active Specializations" icon={<Chip label={Array.isArray(specializations) ? specializations.length : 0} size="small" sx={{ bgcolor: colors.success, color: colors.white, height: '18px', fontSize: '0.7rem' }} />} />
+          <StyledTab label="Archive" icon={<Chip label={Array.isArray(archivedSpecializations) ? archivedSpecializations.length : 0} size="small" sx={{ height: '18px', fontSize: '0.7rem' }} />} />
         </StyledTabs>
       </Box>
 
@@ -304,8 +459,8 @@ export default function SpecializationsManagement() {
         Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} variant="rectangular" height={70} sx={{ borderRadius: '8px', mb: 1.5, bgcolor: colors.lightBlack }} />
         ))
-      ) : specializationsToDisplay.length ? (
-        specializationsToDisplay.map(spec => (
+      ) : filteredSpecializations.length ? (
+        filteredSpecializations.map(spec => (
           <SpecializationItem key={spec.id}>
             <Typography variant="h6" fontWeight="bold">{spec.name}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -318,7 +473,7 @@ export default function SpecializationsManagement() {
                 View Description
               </Button>
               <Divider orientation="vertical" flexItem sx={{ mx: 1.5, borderColor: alpha(colors.grey, 0.2) }} />
-              {spec.status === 'active' ? (
+              {currentTab === 0 ? (
                 <>
                   <Tooltip title="Edit"><IconButton onClick={() => handleEditClick(spec)}><EditIcon sx={{ color: colors.info }} /></IconButton></Tooltip>
                   <Tooltip title="Archive"><IconButton onClick={() => handleArchive(spec.id)}><ArchiveIcon sx={{ color: colors.grey }} /></IconButton></Tooltip>
