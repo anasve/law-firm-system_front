@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Accordion,
   AccordionSummary,
@@ -9,17 +9,16 @@ import {
   Box,
   IconButton,
   Tooltip,
-} from "@mui/material";
-import { styled, alpha } from "@mui/material/styles";
-import { colors } from "../utils/constants";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import EditIcon from "@mui/icons-material/Edit";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import UnarchiveIcon from "@mui/icons-material/Unarchive";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
-import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+} from '@mui/material';
+import { styled, alpha } from '@mui/material/styles';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditIcon from '@mui/icons-material/Edit';
+import ArchiveIcon from '@mui/icons-material/Archive';
+import UnarchiveIcon from '@mui/icons-material/Unarchive';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
+import { colors } from '../constants';
 
 const StyledAccordion = styled(Accordion)({
   backgroundColor: colors.white,
@@ -35,15 +34,18 @@ const StyledAccordionSummary = styled(AccordionSummary)({
   "& .MuiAccordionSummary-expandIconWrapper": { color: colors.textDark },
 });
 
-export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpandChange }) {
-  const handleStatusChange = (action) => {
-    onStatusChange(law.id, action);
-  };
-
+export default function LawCard({ 
+  law, 
+  expanded, 
+  onExpand, 
+  onEdit, 
+  onStatusChange,
+  currentTab 
+}) {
   return (
     <StyledAccordion
       expanded={expanded === law.id}
-      onChange={(_, isExpanded) => onExpandChange(isExpanded ? law.id : false)}
+      onChange={(_, isExpanded) => onExpand(isExpanded ? law.id : false)}
     >
       <StyledAccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="h6" fontWeight="bold">
@@ -87,7 +89,7 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
             whiteSpace: "pre-line",
           }}
         >
-          {law.fullContent}
+          {law.full_content || law.fullContent || ''}
         </Typography>
         <Box
           sx={{
@@ -98,7 +100,7 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
             pt: 1.5,
           }}
         >
-          {law.status === "published" && (
+          {law.status === "published" && currentTab !== 3 && (
             <>
               <Tooltip title="Edit">
                 <IconButton onClick={() => onEdit(law)}>
@@ -106,18 +108,18 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
                 </IconButton>
               </Tooltip>
               <Tooltip title="Unpublish">
-                <IconButton onClick={() => handleStatusChange("unpublish")}>
+                <IconButton onClick={() => onStatusChange(law.id, "unpublish")}>
                   <CloudOffOutlinedIcon sx={{ color: colors.info }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Archive">
-                <IconButton onClick={() => handleStatusChange("archive")}>
+                <IconButton onClick={() => onStatusChange(law.id, "archive")}>
                   <ArchiveIcon sx={{ color: colors.grey }} />
                 </IconButton>
               </Tooltip>
             </>
           )}
-          {law.status === "draft" && (
+          {law.status === "draft" && currentTab !== 3 && (
             <>
               <Tooltip title="Edit">
                 <IconButton onClick={() => onEdit(law)}>
@@ -125,26 +127,26 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
                 </IconButton>
               </Tooltip>
               <Tooltip title="Publish">
-                <IconButton onClick={() => handleStatusChange("publish")}>
+                <IconButton onClick={() => onStatusChange(law.id, "publish")}>
                   <CloudUploadOutlinedIcon sx={{ color: colors.success }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Archive">
-                <IconButton onClick={() => handleStatusChange("archive")}>
+                <IconButton onClick={() => onStatusChange(law.id, "archive")}>
                   <ArchiveIcon sx={{ color: colors.grey }} />
                 </IconButton>
               </Tooltip>
             </>
           )}
-          {law.status === "archived" && (
+          {(law.status === "archived" || currentTab === 3) && (
             <>
               <Tooltip title="Restore">
-                <IconButton onClick={() => handleStatusChange("restore")}>
+                <IconButton onClick={() => onStatusChange(law.id, "restore")}>
                   <UnarchiveIcon sx={{ color: colors.success }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Delete Permanently">
-                <IconButton onClick={() => handleStatusChange("delete")}>
+                <IconButton onClick={() => onStatusChange(law.id, "delete")}>
                   <DeleteForeverIcon sx={{ color: colors.error }} />
                 </IconButton>
               </Tooltip>
@@ -155,4 +157,3 @@ export default function LawCard({ law, onEdit, onStatusChange, expanded, onExpan
     </StyledAccordion>
   );
 }
-

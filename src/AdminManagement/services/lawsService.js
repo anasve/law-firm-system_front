@@ -5,8 +5,9 @@ export const lawsService = {
   getAll: (params = {}) => api.get("/laws", { params }),
 
   // Get laws by status
-  getByStatus: (status, params = {}) => 
-    api.get("/laws", { params: { status, ...params } }),
+  getPublished: (params = {}) => api.get("/laws/published", { params }),
+  getDraft: (params = {}) => api.get("/laws/draft", { params }),
+  getArchived: (params = {}) => api.get("/laws/archived", { params }),
 
   // Get single law
   getById: (id) => api.get(`/laws/${id}`),
@@ -18,12 +19,14 @@ export const lawsService = {
   update: (id, data) => api.put(`/laws/${id}`, data),
 
   // Update law status
-  updateStatus: (id, status) => api.put(`/laws/${id}`, { status }),
+  toggleStatus: (id, status) => api.post(`/laws/${id}/toggle-status`, { status }),
 
-  // Delete law (soft delete)
-  delete: (id) => api.delete(`/laws/${id}`),
+  // Archive law (soft delete)
+  archive: (id) => api.delete(`/laws/${id}`),
+
+  // Restore law
+  restore: (id) => api.put(`/laws/${id}/restore`, null),
 
   // Force delete law
   forceDelete: (id) => api.delete(`/laws/${id}/force`),
 };
-

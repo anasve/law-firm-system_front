@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL, TOKEN_KEY } from "../utils/constants";
+import { API_BASE_URL, TOKEN_KEY } from "../constants";
 
 // Create axios instance with base config
 export const api = axios.create({

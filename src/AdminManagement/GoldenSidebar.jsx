@@ -13,22 +13,14 @@ import { styled, alpha } from '@mui/material/styles';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import GavelIcon from '@mui/icons-material/Gavel';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ReportIcon from '@mui/icons-material/Report';
 import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ClassIcon from '@mui/icons-material/Class';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-
-const colors = {
-  gold: '#D4AF37',
-  black: '#1A1A1A',
-  white: '#FFFFFF',
-  lightBlack: '#232323',
-  selectedBackground: '#2A2A2E',
-};
+import { api, removeToken, getToken } from './services/api';
+import { colors } from './constants';
 
 const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   borderRadius: '8px',
@@ -47,26 +39,27 @@ const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
     '& .MuiListItemIcon-root': { color: colors.gold },
   },
   '&.Mui-selected': {
-    backgroundColor: colors.selectedBackground,
+    backgroundColor: '#2A2A2E',
     color: colors.white,
     fontWeight: 'bold',
     '& .MuiListItemIcon-root': { color: colors.white },
-    '&:hover': { backgroundColor: colors.selectedBackground },
+    '&:hover': { backgroundColor: '#2A2A2E' },
   },
 }));
+
+const menuItems = [
+  { text: 'Home', icon: <PieChartIcon />, path: '/dashboard' },
+  { text: 'Lawyers', icon: <GavelIcon />, path: '/lawyers' },
+  { text: 'Employees', icon: <BusinessCenterOutlinedIcon />, path: '/employees' },
+  { text: 'Laws Management', icon: <GavelIcon />, path: '/laws-management' },
+  { text: 'Specializations', icon: <ClassIcon />, path: '/specializations' },
+  { text: 'Edit Profile', icon: <AccountCircleIcon />, path: '/profile-edit' },
+];
 
 export default function GoldenSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const menuItems = [
-    { text: 'Home', icon: <PieChartIcon />, path: '/dashboard' },
-    { text: 'User Management', icon: <SupervisorAccountIcon />, path: '/lawyers' },
-    { text: 'Laws Management', icon: <GavelIcon />, path: '/laws-management' },
-    { text: 'Specializations', icon: <ClassIcon />, path: '/specializations' },
-    { text: 'Edit Profile', icon: <AccountCircleIcon />, path: '/profile-edit' },
-  ];
 
   const isPathActive = (path) => {
     if (path === '/') {
@@ -78,25 +71,17 @@ export default function GoldenSidebar() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      const token = localStorage.getItem('adminToken'); // افترضنا أنك خزنت التوكن هنا
+      const token = getToken();
       if (!token) {
         alert('Not logged in yet.');
         setLoggingOut(false);
         return;
       }
 
-      await axios.post(
-        'http://127.0.0.1:8000/api/admin/logout',
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.post('/logout', {});
 
-      localStorage.removeItem('adminToken'); // إزالة التوكن بعد تسجيل الخروج
-      navigate('/'); // إعادة التوجيه لصفحة تسجيل الدخول
+      removeToken();
+      navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
       alert('An error occurred while logging out. Please try again.');

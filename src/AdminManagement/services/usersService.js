@@ -9,7 +9,7 @@ export const usersService = {
   updateLawyer: (id, data) => api.post(`/lawyers/${id}`, data),
   archiveLawyer: (id) => api.delete(`/lawyers/${id}`),
   restoreLawyer: (id) => api.put(`/lawyers/${id}/restore`, null),
-  deleteLawyer: (id) => api.delete(`/lawyers/${id}`),
+  deleteLawyer: (id) => api.delete(`/lawyers/${id}/force`),
   getLawyersTotal: () => api.get("/lawyers/total"),
 
   // Employees
@@ -20,7 +20,7 @@ export const usersService = {
   updateEmployee: (id, data) => api.post(`/employees/${id}`, data),
   archiveEmployee: (id) => api.delete(`/employees/${id}`),
   restoreEmployee: (id) => api.put(`/employees/${id}/restore`, null),
-  deleteEmployee: (id) => api.delete(`/employees/${id}`),
+  deleteEmployee: (id) => api.delete(`/employees/${id}/force`),
   getEmployeesTotal: () => api.get("/employees/total"),
 
   // Specializations
@@ -30,6 +30,6 @@ export const usersService = {
   updateSpecialization: (id, data) => api.put(`/specializations/${id}`, data),
   archiveSpecialization: (id) => api.delete(`/specializations/${id}`),
   restoreSpecialization: (id) => api.put(`/specializations/${id}/restore`, null),
-  deleteSpecialization: (id) => api.delete(`/specializations/${id}`),
+  deleteSpecialization: (id) => api.delete(`/specializations/${id}/force`), // Force delete
 };
 

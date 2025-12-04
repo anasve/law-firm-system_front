@@ -1,57 +1,110 @@
-import { styled, alpha } from "@mui/material/styles";
-import { TextField, Tabs, Tab, Box, Typography } from "@mui/material";
-import { colors } from "../utils/constants";
-import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
+import { styled, alpha } from '@mui/material/styles';
+import { Button, TextField, Paper } from '@mui/material';
+import { colors } from '../constants';
 
-export const SearchTextField = styled(TextField)({
-  "& .MuiInput-underline:before": {
-    borderBottomColor: alpha(colors.white, 0.4),
-  },
-  "&:hover .MuiInput-underline:before": { borderBottomColor: colors.gold },
-  "& .MuiInput-underline:after": { borderBottomColor: colors.gold },
-  "& .MuiInputBase-input": {
+// Common Styled TextField
+export const StyledTextField = styled(TextField)({
+  '& label.Mui-focused': { color: colors.gold },
+  '& .MuiOutlinedInput-root': {
     color: colors.white,
-    fontFamily: "Arial, sans-serif",
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    fontFamily: 'Arial, sans-serif',
+    '& fieldset': { borderColor: alpha(colors.white, 0.2) },
+    '&:hover fieldset': { borderColor: alpha(colors.gold, 0.7) },
+    '&.Mui-focused fieldset': { borderColor: colors.gold },
+    '& .MuiSvgIcon-root': { color: colors.textSecondary },
+    // Autofill styles
+    '& input:-webkit-autofill': {
+      WebkitBoxShadow: `0 0 0 100px ${colors.lightBlack} inset !important`,
+      WebkitTextFillColor: `${colors.white} !important`,
+      caretColor: colors.white,
+      borderRadius: '4px',
+    },
+    '& input:-webkit-autofill:hover': {
+      WebkitBoxShadow: `0 0 0 100px ${colors.lightBlack} inset !important`,
+      WebkitTextFillColor: `${colors.white} !important`,
+    },
+    '& input:-webkit-autofill:focus': {
+      WebkitBoxShadow: `0 0 0 100px ${colors.lightBlack} inset !important`,
+      WebkitTextFillColor: `${colors.white} !important`,
+    },
+    '& input:-webkit-autofill:active': {
+      WebkitBoxShadow: `0 0 0 100px ${colors.lightBlack} inset !important`,
+      WebkitTextFillColor: `${colors.white} !important`,
+    },
   },
+  '& .MuiInputLabel-root': {
+    color: colors.textSecondary,
+    fontFamily: 'Arial, sans-serif',
+  }
 });
 
-export const StyledTabs = styled(Tabs)({
-  minHeight: "48px",
-  "& .MuiTabs-indicator": {
-    backgroundColor: colors.gold,
-    height: "3px",
-    borderRadius: "2px",
+// Common Styled Button
+export const StyledButton = styled(Button)(({ variant = 'contained' }) => ({
+  fontFamily: 'Arial, sans-serif',
+  fontWeight: 'bold',
+  borderRadius: '8px',
+  padding: '10px 24px',
+  backgroundColor: variant === 'contained' ? colors.gold : 'transparent',
+  color: variant === 'contained' ? colors.black : colors.textSecondary,
+  border: variant === 'outlined' ? `1px solid ${colors.textSecondary}` : 'none',
+  '&:hover': {
+    backgroundColor: variant === 'contained' ? colors.darkGold : alpha(colors.white, 0.1),
   },
-});
-
-export const StyledTab = styled(Tab)(({ theme }) => ({
-  minHeight: "48px",
-  color: alpha(colors.white, 0.7),
-  fontWeight: "bold",
-  fontFamily: "Cairo, sans-serif",
-  "&.Mui-selected": { color: colors.gold },
-  textTransform: "none",
-  fontSize: "0.8rem",
-  gap: theme.spacing(0.75),
 }));
 
-export const EmptyState = ({ message, tab }) => {
-  const messages = {
-    0: "No laws match your search",
-    1: "No published laws currently",
-    2: "No unpublished laws currently",
-    3: "Archive is currently empty",
-  };
-  return (
-    <Box sx={{ textAlign: "center", p: 8, color: colors.textLight }}>
-      <FindInPageOutlinedIcon
-        sx={{ fontSize: 80, mb: 2, color: alpha(colors.white, 0.3) }}
-      />
-      <Typography variant="h6" fontWeight="bold">
-        {messages[tab]}
-      </Typography>
-      <Typography variant="body1">{message}</Typography>
-    </Box>
-  );
-};
+// Section Card
+export const SectionCard = styled(Paper)(({ theme }) => ({
+  backgroundColor: colors.lightBlack,
+  padding: theme.spacing(4),
+  borderRadius: '16px',
+  border: `1px solid ${alpha(colors.white, 0.1)}`,
+  color: colors.white,
+  marginBottom: theme.spacing(4),
+}));
 
+// Stat Card
+export const StatCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  borderRadius: '12px',
+  backgroundColor: colors.lightBlack,
+  color: colors.white,
+  height: '100%',
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: `0 8px 16px ${alpha(colors.black, 0.3)}`,
+  },
+}));
+
+// Welcome Banner
+export const WelcomeBanner = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4, 3),
+  marginBottom: theme.spacing(4),
+  borderRadius: '16px',
+  background: `linear-gradient(145deg, ${colors.lightBlack} 30%, ${colors.black} 100%)`,
+  borderRight: `5px solid ${colors.gold}`,
+  color: colors.white,
+  position: 'relative',
+}));
+
+// Action Button (for forms)
+export const ActionButton = styled(Button)(({ variant = 'contained' }) => ({
+  fontFamily: 'Arial, sans-serif',
+  fontWeight: 'bold',
+  borderRadius: '8px',
+  padding: '10px 24px',
+  backgroundColor: variant === 'contained' ? colors.gold : 'transparent',
+  color: variant === 'contained' ? colors.black : colors.textSecondary,
+  border: variant === 'outlined' ? `1px solid ${colors.textSecondary}` : 'none',
+  '&:hover': {
+    backgroundColor: variant === 'contained' ? colors.darkGold : alpha(colors.white, 0.1),
+  },
+  '& .MuiButton-startIcon': {
+    marginRight: -4,
+    marginLeft: 8
+  }
+}));

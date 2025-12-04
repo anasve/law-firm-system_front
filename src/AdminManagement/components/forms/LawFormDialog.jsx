@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -6,50 +6,26 @@ import {
   DialogActions,
   Button,
   TextField,
-} from "@mui/material";
-import { colors } from "../utils/constants";
+} from '@mui/material';
+import { colors } from '../../constants';
 
-export default function LawFormDialog({
-  open,
-  onClose,
-  onSubmit,
-  law,
-  title,
+const dialogPaperProps = {
+  sx: {
+    backgroundColor: colors.lightBlack,
+    color: colors.white,
+    borderRadius: "16px",
+  },
+};
+
+export default function LawFormDialog({ 
+  open, 
+  onClose, 
+  onSubmit, 
+  law, 
+  formData, 
+  onChange 
 }) {
-  const [formData, setFormData] = React.useState({
-    title: law?.title || "",
-    category: law?.category || "",
-    summary: law?.summary || "",
-    fullContent: law?.fullContent || "",
-  });
-
-  React.useEffect(() => {
-    if (law) {
-      setFormData({
-        title: law.title || "",
-        category: law.category || "",
-        summary: law.summary || "",
-        fullContent: law.fullContent || "",
-      });
-    } else {
-      setFormData({
-        title: "",
-        category: "",
-        summary: "",
-        fullContent: "",
-      });
-    }
-  }, [law, open]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
-  };
+  const isEdit = !!law;
 
   return (
     <Dialog
@@ -57,15 +33,11 @@ export default function LawFormDialog({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
-      PaperProps={{
-        sx: {
-          backgroundColor: colors.lightBlack,
-          color: colors.white,
-          borderRadius: "16px",
-        },
-      }}
+      PaperProps={dialogPaperProps}
     >
-      <DialogTitle sx={{ fontWeight: "bold" }}>{title}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: "bold" }}>
+        {isEdit ? "Edit Law" : "Add New Law"}
+      </DialogTitle>
       <DialogContent sx={{ pt: "20px !important", mt: 1 }}>
         <TextField
           autoFocus
@@ -73,8 +45,8 @@ export default function LawFormDialog({
           label="Law Title"
           fullWidth
           variant="filled"
-          value={formData.title}
-          onChange={handleChange}
+          value={formData.title || ""}
+          onChange={onChange}
           sx={{ mb: 2 }}
           InputLabelProps={{ sx: { color: colors.textLight } }}
           InputProps={{ sx: { color: colors.white } }}
@@ -84,8 +56,8 @@ export default function LawFormDialog({
           label="Category"
           fullWidth
           variant="filled"
-          value={formData.category}
-          onChange={handleChange}
+          value={formData.category || ""}
+          onChange={onChange}
           sx={{ mb: 2 }}
           InputLabelProps={{ sx: { color: colors.textLight } }}
           InputProps={{ sx: { color: colors.white } }}
@@ -97,21 +69,21 @@ export default function LawFormDialog({
           multiline
           rows={3}
           variant="filled"
-          value={formData.summary}
-          onChange={handleChange}
+          value={formData.summary || ""}
+          onChange={onChange}
           sx={{ mb: 2 }}
           InputLabelProps={{ sx: { color: colors.textLight } }}
           InputProps={{ sx: { color: colors.white } }}
         />
         <TextField
-          name="fullContent"
+          name="full_content"
           label="Full Description"
           fullWidth
           multiline
           rows={6}
           variant="filled"
-          value={formData.fullContent}
-          onChange={handleChange}
+          value={formData.full_content || formData.fullContent || ""}
+          onChange={onChange}
           InputLabelProps={{ sx: { color: colors.textLight } }}
           InputProps={{ sx: { color: colors.white } }}
         />
@@ -125,18 +97,17 @@ export default function LawFormDialog({
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit}
+          onClick={onSubmit}
           variant="contained"
           sx={{
             backgroundColor: colors.gold,
             color: colors.black,
-            "&:hover": { backgroundColor: "#B4943C" },
+            "&:hover": { backgroundColor: colors.darkGold },
           }}
         >
-          {law ? "Save Changes" : "Save"}
+          {isEdit ? "Save Changes" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
-

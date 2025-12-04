@@ -16,9 +16,3 @@ export const colors = {
   grey: "#888",
 };
 
-// API Base URL
-export const API_BASE_URL = "http://127.0.0.1:8000/api/admin";
-
-// Token key
-export const TOKEN_KEY = "adminToken";
-
