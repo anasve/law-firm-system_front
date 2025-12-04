@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, TextField, Avatar, IconButton, Grid, Button, Paper,
+  Box, Typography, TextField, IconButton, Grid, Button, Paper,
   InputAdornment, Tooltip
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -71,10 +70,9 @@ const ActionButton = styled(Button)(({ theme, variant = 'contained' }) => ({
 export default function ProfileEdit() {
   const navigate = useNavigate();
 
-  const [profile, setProfile] = useState({ fullName: "", email: "", image: null });
+  const [profile, setProfile] = useState({ fullName: "", email: "" });
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
-  const [imagePreview, setImagePreview] = useState(null);
 
   // --- Fetch profile data ---
   useEffect(() => {
@@ -95,23 +93,10 @@ export default function ProfileEdit() {
         
         console.log('Profile data received:', adminData);
         
-        // Get image URL
-        let imageUrl = adminData.image_url || adminData.image || adminData.photo || null;
-        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-          if (imageUrl.startsWith('/')) {
-            imageUrl = `http://127.0.0.1:8000${imageUrl}`;
-          } else {
-            imageUrl = `http://127.0.0.1:8000/${imageUrl}`;
-          }
-        }
-        
         setProfile({
           fullName: adminData.name || adminData.full_name || adminData.fullName || '',
-          email: adminData.email || '',
-          image: imageUrl
+          email: adminData.email || ''
         });
-        
-        setImagePreview(imageUrl);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
         if (error.response?.status === 401) {
@@ -174,11 +159,6 @@ export default function ProfileEdit() {
         formData.append('password', passwords.new);
         formData.append('password_confirmation', passwords.confirm);
       }
-      
-      // Only add image if it's a new file
-      if (profile.image && profile.image instanceof File) {
-        formData.append('image', profile.image);
-      }
 
       // Use POST with _method=PUT for Laravel compatibility
       formData.append('_method', 'PUT');
@@ -186,8 +166,7 @@ export default function ProfileEdit() {
       console.log('Sending profile update:', {
         name: profile.fullName,
         email: profile.email,
-        hasPassword: !!(passwords.current && passwords.new),
-        hasImage: profile.image instanceof File
+        hasPassword: !!(passwords.current && passwords.new)
       });
 
       const response = await axios.post(
@@ -214,21 +193,11 @@ export default function ProfileEdit() {
       const adminData = refreshResponse.data.data || refreshResponse.data.admin || refreshResponse.data || {};
       console.log('Refreshed profile data:', adminData);
       
-      let imageUrl = adminData.image_url || adminData.image || adminData.photo || null;
-      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-        if (imageUrl.startsWith('/')) {
-          imageUrl = `http://127.0.0.1:8000${imageUrl}`;
-        } else {
-          imageUrl = `http://127.0.0.1:8000/${imageUrl}`;
-        }
-      }
-      
+      // Update profile with fresh data from API
       setProfile({
         fullName: adminData.name || adminData.full_name || adminData.fullName || '',
-        email: adminData.email || '',
-        image: imageUrl
+        email: adminData.email || ''
       });
-      setImagePreview(imageUrl);
 
     } catch (error) {
       console.error("Error saving changes:", error);
@@ -270,39 +239,6 @@ export default function ProfileEdit() {
 
       <form onSubmit={handleSave}>
         <Box sx={{ maxWidth: '900px', margin: '0 auto' }}>
-          {/* User Image */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
-            <Box position="relative" display="inline-block" mb={2}>
-              <Avatar 
-                src={imagePreview || profile.image} 
-                sx={{ width: 120, height: 120, bgcolor: colors.gold, fontSize: 48, color: colors.black }}
-              >
-                {profile.fullName ? profile.fullName.split(" ").map(w => w[0]).join("").slice(0, 2) : 'A'}
-              </Avatar>
-              <IconButton 
-                component="label" 
-                sx={{ position: 'absolute', bottom: 5, left: 5, bgcolor: alpha(colors.black, 0.7), '&:hover': { bgcolor: colors.black } }}
-              >
-                <PhotoCameraIcon sx={{ color: colors.gold }} />
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  hidden 
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      setProfile(prev => ({ ...prev, image: file }));
-                      setImagePreview(URL.createObjectURL(file));
-                    }
-                  }}
-                />
-              </IconButton>
-            </Box>
-            <Typography fontWeight="bold" variant="h6" sx={{ color: colors.white }}>
-              {profile.fullName || 'Admin User'}
-            </Typography>
-          </Box>
-
           {/* Personal Information */}
           <SectionCard>
             <Typography variant="h6" fontWeight="bold" sx={{ color: colors.gold, mb: 3 }}>Personal Information</Typography>
