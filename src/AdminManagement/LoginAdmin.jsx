@@ -50,6 +50,30 @@ const StyledTextField = styled(TextField)({
       padding: '14px 16px',
       fontSize: '1rem',
       fontWeight: '400',
+      // Autofill styles - matches the background
+      '&:-webkit-autofill': {
+        WebkitBoxShadow: `0 0 0 1000px ${alpha(colors.black, 0.4)} inset !important`,
+        WebkitTextFillColor: `${colors.white} !important`,
+        caretColor: colors.white,
+        borderRadius: '12px',
+        transition: 'background-color 5000s ease-in-out 0s',
+        backgroundColor: 'transparent !important',
+      },
+      '&:-webkit-autofill:hover': {
+        WebkitBoxShadow: `0 0 0 1000px ${alpha(colors.black, 0.4)} inset !important`,
+        WebkitTextFillColor: `${colors.white} !important`,
+        backgroundColor: 'transparent !important',
+      },
+      '&:-webkit-autofill:focus': {
+        WebkitBoxShadow: `0 0 0 1000px ${alpha(colors.black, 0.4)} inset !important`,
+        WebkitTextFillColor: `${colors.white} !important`,
+        backgroundColor: 'transparent !important',
+      },
+      '&:-webkit-autofill:active': {
+        WebkitBoxShadow: `0 0 0 1000px ${alpha(colors.black, 0.4)} inset !important`,
+        WebkitTextFillColor: `${colors.white} !important`,
+        backgroundColor: 'transparent !important',
+      },
     },
   },
   '& label': {
@@ -104,20 +128,28 @@ export default function LoginAdmin() {
     setLoading(true);
 
     try {
-      // Fetch CSRF cookie from Laravel Sanctum
-      await axios.get("http://127.0.0.1:8000/sanctum/csrf-cookie", {
+      // Fetch CSRF cookie from Laravel Sanctum (using proxy)
+      await axios.get("/sanctum/csrf-cookie", {
         withCredentials: true,
+        headers: {
+          "Accept": "application/json",
+        },
       });
 
-      // Login with credentials
+      // Login with credentials (using proxy)
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/admin/login",
+        "/api/admin/login",
         {
           email: values.email,
           password: values.password,
         },
         {
           withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
         }
       );
 
@@ -178,8 +210,7 @@ export default function LoginAdmin() {
             value={values.email}
             onChange={(e) => setValues({ ...values, email: e.target.value })}
             sx={{ mb: 2.5 }}
-            autoComplete="email"
-            placeholder="admin@example.com"
+            autoComplete="off"
           />
           <StyledTextField
             fullWidth
