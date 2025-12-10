@@ -1,0 +1,19 @@
+import { api } from './api';
+
+export const clientsService = {
+  getClients: (params = {}) => api.get('/clients', { params }),
+  getClient: (id) => api.get(`/clients/${id}`),
+  getPendingClients: () => api.get('/clients/pending-verified'),
+  getApprovedClients: () => api.get('/clients/approved'),
+  getRejectedClients: () => api.get('/clients/rejected'),
+  getSuspendedClients: () => api.get('/clients/suspended'),
+  getArchivedClients: () => api.get('/clients/archived'),
+  activateClient: (id) => api.post(`/clients/${id}/activate`),
+  rejectClient: (id) => api.post(`/clients/${id}/reject`),
+  suspendClient: (id) => api.post(`/clients/${id}/suspend`),
+  updateClient: (id, data) => api.put(`/clients/${id}`, data),
+  deleteClient: (id) => api.delete(`/clients/${id}`),
+  restoreClient: (id) => api.put(`/clients/${id}/restore`),
+  forceDeleteClient: (id) => api.delete(`/clients/${id}/force`),
+};
+

@@ -11,17 +11,17 @@ import {
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import PieChartIcon from '@mui/icons-material/PieChart';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import GavelIcon from '@mui/icons-material/Gavel';
-import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import PeopleIcon from '@mui/icons-material/People';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import EventIcon from '@mui/icons-material/Event';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
-import ClassIcon from '@mui/icons-material/Class';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
-import { colors } from './constants';
-import NotificationBell from './components/notifications/NotificationBell';
+import { colors } from '../AdminManagement/constants';
+import NotificationBell from './components/NotificationBell';
 
 const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   borderRadius: '8px',
@@ -49,21 +49,21 @@ const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
 }));
 
 const menuItems = [
-  { text: 'Home', icon: <PieChartIcon />, path: '/dashboard' },
-  { text: 'Lawyers', icon: <GavelIcon />, path: '/lawyers' },
-  { text: 'Employees', icon: <BusinessCenterOutlinedIcon />, path: '/employees' },
-  { text: 'Laws Management', icon: <GavelIcon />, path: '/laws-management' },
-  { text: 'Specializations', icon: <ClassIcon />, path: '/specializations' },
-  { text: 'Edit Profile', icon: <AccountCircleIcon />, path: '/profile-edit' },
+  { text: 'Dashboard', icon: <PieChartIcon />, path: '/employee/dashboard' },
+  { text: 'Clients', icon: <PeopleIcon />, path: '/employee/clients' },
+  { text: 'Consultations', icon: <QuestionAnswerIcon />, path: '/employee/consultations' },
+  { text: 'Availability', icon: <ScheduleIcon />, path: '/employee/availability' },
+  { text: 'Appointments', icon: <EventIcon />, path: '/employee/appointments' },
+  { text: 'Profile', icon: <AccountCircleIcon />, path: '/employee/profile' },
 ];
 
-export default function GoldenSidebar() {
+export default function EmployeeSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isPathActive = (path) => {
-    if (path === '/') {
+    if (path === '/employee/dashboard') {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
@@ -82,7 +82,7 @@ export default function GoldenSidebar() {
       await api.post('/logout', {});
 
       removeToken();
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       alert('An error occurred while logging out. Please try again.');
@@ -111,10 +111,10 @@ export default function GoldenSidebar() {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, mr: 2 }}>
-            <SchoolIcon sx={{ fontSize: 30, color: colors.black }} />
+            <BusinessCenterOutlinedIcon sx={{ fontSize: 30, color: colors.black }} />
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
-            Lawyer Pro
+            Employee Portal
           </Typography>
         </Box>
         <NotificationBell />
@@ -163,3 +163,4 @@ export default function GoldenSidebar() {
     </Box>
   );
 }
+

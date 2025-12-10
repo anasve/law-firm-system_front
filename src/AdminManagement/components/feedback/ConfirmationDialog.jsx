@@ -3,7 +3,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography }
 import { alpha } from '@mui/material/styles';
 import { colors } from '../../constants';
 
-export default function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
+export default function ConfirmationDialog({ open, onClose, onConfirm, title, message, loading = false }) {
   return (
     <Dialog 
       open={open} 
@@ -22,16 +22,17 @@ export default function ConfirmationDialog({ open, onClose, onConfirm, title, me
         <Typography>{message}</Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} sx={{ color: colors.textLight }}>Cancel</Button>
+        <Button onClick={onClose} disabled={loading} sx={{ color: colors.textLight }}>إلغاء</Button>
         <Button 
           onClick={onConfirm} 
           variant="contained" 
+          disabled={loading}
           sx={{ 
             bgcolor: colors.error, 
             '&:hover': { bgcolor: '#B71C1C' } 
           }}
         >
-          Confirm Delete
+          {loading ? 'جاري المعالجة...' : 'تأكيد'}
         </Button>
       </DialogActions>
     </Dialog>
