@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
-  Box, Typography, MenuItem, CircularProgress
+  Box, Typography, MenuItem, CircularProgress, FormControl, InputLabel, Select,
+  Checkbox, ListItemText, Chip
 } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import { colors } from '../../constants';
@@ -41,6 +42,18 @@ const inputFieldStyles = {
   },
   '& .MuiSvgIcon-root': {
     color: '#C4A484',
+  },
+  // Hide number input spinners
+  '& input[type=number]': {
+    MozAppearance: 'textfield',
+    '&::-webkit-outer-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
+    '&::-webkit-inner-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
   },
 };
 
@@ -234,6 +247,7 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
               autoComplete="off"
               sx={inputFieldStyles}
               InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
+              inputProps={{ min: 18, max: 100 }}
             />
             <TextField
               name="password"
@@ -257,21 +271,92 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
               InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
             />
 
-            <TextField
-              select
-              SelectProps={{ multiple: true }}
-              name="specialization_ids"
-              label="Specializations"
-              value={formData.specialization_ids || []}
-              onChange={handleChange}
-              sx={inputFieldStyles}
-            >
-              {specializations.map((spec) => (
-                <MenuItem key={spec.id} value={spec.id}>
-                  {spec.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            <FormControl fullWidth sx={inputFieldStyles}>
+              <InputLabel sx={{ color: '#C4A484', left: '1.5rem', right: 'auto' }}>Specializations</InputLabel>
+              <Select
+                multiple
+                name="specialization_ids"
+                value={formData.specialization_ids || []}
+                onChange={handleChange}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.length === 0 ? (
+                      <Typography sx={{ color: '#C4A484', fontSize: '0.875rem' }}>
+                        No specializations selected
+                      </Typography>
+                    ) : (
+                      selected.map((value) => {
+                        const spec = specializations.find(s => s.id === value);
+                        return spec ? (
+                          <Chip 
+                            key={value} 
+                            label={spec.name} 
+                            size="small" 
+                            sx={{ 
+                              backgroundColor: 'rgba(224, 193, 129, 0.2)', 
+                              color: '#E0C181',
+                              fontWeight: 'bold',
+                              border: '1px solid rgba(224, 193, 129, 0.3)',
+                            }} 
+                          />
+                        ) : null;
+                      })
+                    )}
+                  </Box>
+                )}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: 'rgba(0,0,0,0.9)',
+                      color: '#E0C181',
+                      border: '1px solid rgba(224, 193, 129, 0.2)',
+                      maxHeight: 300,
+                      '& .MuiMenuItem-root': {
+                        color: '#E0C181',
+                        '&:hover': {
+                          backgroundColor: 'rgba(224, 193, 129, 0.2)',
+                          color: '#E0C181',
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(224, 193, 129, 0.3)',
+                          color: '#E0C181',
+                          fontWeight: 'bold',
+                          '&:hover': {
+                            backgroundColor: 'rgba(224, 193, 129, 0.4)',
+                          },
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                {specializations.length === 0 ? (
+                  <MenuItem disabled sx={{ color: '#C4A484' }}>
+                    No specializations available
+                  </MenuItem>
+                ) : (
+                  specializations.map((spec) => (
+                    <MenuItem key={spec.id} value={spec.id}>
+                      <Checkbox
+                        checked={(formData.specialization_ids || []).indexOf(spec.id) > -1}
+                        sx={{
+                          color: '#E0C181',
+                          '&.Mui-checked': {
+                            color: '#E0C181',
+                          },
+                        }}
+                      />
+                      <ListItemText primary={spec.name} sx={{ color: '#E0C181' }} />
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+            {formData.specialization_ids && formData.specialization_ids.length > 0 && (
+              <Typography sx={{ color: '#C4A484', mt: 1, fontSize: 14 }}>
+                {formData.specialization_ids.length} specialization{formData.specialization_ids.length > 1 ? 's' : ''} selected
+              </Typography>
+            )}
             
             <Box sx={{ mt: 2 }}>
               <Typography sx={{ color: '#C4A484', mb: 1 }}>Lawyer Certificate</Typography>

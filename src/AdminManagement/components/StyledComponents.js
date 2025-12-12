@@ -36,7 +36,19 @@ export const StyledTextField = styled(TextField)({
   '& .MuiInputLabel-root': {
     color: colors.textSecondary,
     fontFamily: 'Arial, sans-serif',
-  }
+  },
+  // Hide number input spinners
+  '& input[type=number]': {
+    MozAppearance: 'textfield',
+    '&::-webkit-outer-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
+    '&::-webkit-inner-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
+  },
 });
 
 // Common Styled Button

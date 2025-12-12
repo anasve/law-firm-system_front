@@ -144,6 +144,11 @@ export default function ConsultationsPage() {
     applyFilters();
   }, [consultations, selectedTab]);
 
+  // Debug: Log filtered consultations
+  useEffect(() => {
+    console.log('Filtered consultations:', filteredConsultations);
+  }, [filteredConsultations]);
+
   useEffect(() => {
     if (detailsDialogOpen && selectedConsultation) {
       fetchMessages(selectedConsultation.id);
@@ -159,13 +164,17 @@ export default function ConsultationsPage() {
     const token = getToken();
     if (!token) {
       setError('Please login first');
+      setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
       setError('');
+      console.log('Fetching consultations for lawyer...');
       const response = await consultationsService.getConsultations();
+      console.log('Consultations response:', response);
+      console.log('Response data:', response.data);
       
       // Handle different response formats
       let consultationsData = [];
@@ -175,17 +184,28 @@ export default function ConsultationsPage() {
         consultationsData = response.data.data;
       } else if (response.data?.consultations && Array.isArray(response.data.consultations)) {
         consultationsData = response.data.consultations;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        consultationsData = response.data.items;
       }
       
+      console.log('Extracted consultations:', consultationsData);
       setConsultations(consultationsData);
+      setFilteredConsultations(consultationsData); // Initialize filtered consultations
     } catch (error) {
       console.error('Failed to fetch consultations:', error);
+      console.error('Error response:', error.response);
       if (error.response?.status === 401) {
         setError('Session expired. Please login again.');
+      } else if (error.response?.status === 404) {
+        setError('Consultations endpoint not found. Please check backend configuration.');
       } else {
-        setError(error.response?.data?.message || 'Failed to load consultations. Please try again.');
+        const errorMessage = error.response?.data?.message || 
+                            error.message || 
+                            'Failed to load consultations. Please try again.';
+        setError(errorMessage);
       }
       setConsultations([]);
+      setFilteredConsultations([]);
     } finally {
       setLoading(false);
     }
@@ -201,6 +221,12 @@ export default function ConsultationsPage() {
   };
 
   const applyFilters = () => {
+    if (!Array.isArray(consultations)) {
+      console.warn('Consultations is not an array:', consultations);
+      setFilteredConsultations([]);
+      return;
+    }
+
     let filtered = [...consultations];
 
     const tabFilters = {
@@ -210,8 +236,11 @@ export default function ConsultationsPage() {
       3: (cons) => cons.status === 'completed',
       4: (cons) => cons.status === 'rejected',
     };
-    filtered = filtered.filter(tabFilters[selectedTab] || (() => true));
+    
+    const filterFn = tabFilters[selectedTab] || (() => true);
+    filtered = filtered.filter(filterFn);
 
+    console.log('Applied filters - Total:', consultations.length, 'Filtered:', filtered.length, 'Tab:', selectedTab);
     setFilteredConsultations(filtered);
   };
 
@@ -649,7 +678,7 @@ export default function ConsultationsPage() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
             Consultation Details
           </Typography>
           <IconButton onClick={() => {
@@ -720,26 +749,62 @@ export default function ConsultationsPage() {
 
                 {selectedConsultation.attachments && selectedConsultation.attachments.length > 0 && (
                   <Grid item xs={12}>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
-                      Attachments
+                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1, fontWeight: 600 }}>
+                      Consultation Attachments ({selectedConsultation.attachments.length})
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {selectedConsultation.attachments.map((attachment, index) => (
-                        <Chip
-                          key={index}
-                          icon={<AttachFileIcon />}
-                          label={attachment.name || `Attachment ${index + 1}`}
-                          onClick={() => window.open(attachment.path || attachment.url, '_blank')}
-                          sx={{
-                            backgroundColor: colors.black,
-                            color: colors.gold,
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: alpha(colors.gold, 0.2),
-                            },
-                          }}
-                        />
-                      ))}
+                      {selectedConsultation.attachments.map((attachment, index) => {
+                        const fileUrl = attachment.path || attachment.url || attachment.file_path;
+                        const fileName = attachment.name || attachment.file_name || `Attachment ${index + 1}`;
+                        const fileSize = attachment.size ? `(${(attachment.size / 1024).toFixed(2)} KB)` : '';
+                        return (
+                          <Paper
+                            key={index}
+                            onClick={() => {
+                              if (fileUrl) {
+                                window.open(fileUrl, '_blank');
+                              }
+                            }}
+                            sx={{
+                              p: 1.5,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              backgroundColor: colors.black,
+                              border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                              borderRadius: '8px',
+                              cursor: fileUrl ? 'pointer' : 'default',
+                              transition: 'all 0.3s ease',
+                              '&:hover': fileUrl ? {
+                                backgroundColor: alpha(colors.gold, 0.1),
+                                borderColor: colors.gold,
+                                transform: 'translateY(-2px)',
+                              } : {},
+                            }}
+                          >
+                            <AttachFileIcon sx={{ color: colors.gold, fontSize: 20 }} />
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: colors.white,
+                                  fontWeight: 500,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {fileName}
+                              </Typography>
+                              {fileSize && (
+                                <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                                  {fileSize}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Paper>
+                        );
+                      })}
                     </Box>
                   </Grid>
                 )}
@@ -755,119 +820,259 @@ export default function ConsultationsPage() {
               {/* Messages List */}
               <Box
                 sx={{
-                  maxHeight: '300px',
+                  maxHeight: '400px',
                   overflow: 'auto',
                   mb: 2,
-                  p: 1,
+                  p: 2,
                   backgroundColor: colors.black,
-                  borderRadius: '8px',
+                  borderRadius: '12px',
+                  border: `1px solid ${alpha(colors.gold, 0.1)}`,
                 }}
               >
                 {Array.isArray(messages) && messages.length > 0 ? (
-                  <List>
-                    {messages.map((message, index) => (
-                      <ListItem
-                        key={message.id || index}
-                        sx={{
-                          backgroundColor: message.sender_type === 'lawyer' ? alpha(colors.gold, 0.1) : colors.black,
-                          borderRadius: '8px',
-                          mb: 1,
-                          flexDirection: message.sender_type === 'lawyer' ? 'row-reverse' : 'row',
-                        }}
-                      >
-                        <ListItemAvatar>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {messages.map((message, index) => {
+                      const isLawyer = message.sender_type === 'lawyer';
+                      const hasAttachment = message.attachment || message.attachment_path || message.attachment_url;
+                      return (
+                        <Box
+                          key={message.id || index}
+                          sx={{
+                            display: 'flex',
+                            flexDirection: isLawyer ? 'row-reverse' : 'row',
+                            gap: 1.5,
+                            alignItems: 'flex-start',
+                          }}
+                        >
                           <Avatar
                             sx={{
-                              bgcolor: message.sender_type === 'lawyer' ? colors.gold : colors.info,
-                              width: 32,
-                              height: 32,
+                              bgcolor: isLawyer ? colors.gold : colors.info,
+                              width: 40,
+                              height: 40,
+                              border: `2px solid ${alpha(isLawyer ? colors.gold : colors.info, 0.3)}`,
                             }}
                           >
-                            {message.sender_type === 'lawyer' ? (
-                              <GavelIcon sx={{ fontSize: 18 }} />
+                            {isLawyer ? (
+                              <GavelIcon sx={{ fontSize: 20, color: colors.black }} />
                             ) : (
-                              <PersonIcon sx={{ fontSize: 18 }} />
+                              <PersonIcon sx={{ fontSize: 20, color: colors.white }} />
                             )}
                           </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2" sx={{ color: colors.white }}>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              maxWidth: '70%',
+                              backgroundColor: isLawyer
+                                ? alpha(colors.gold, 0.15)
+                                : alpha(colors.info, 0.15),
+                              borderRadius: '12px',
+                              p: 1.5,
+                              border: `1px solid ${alpha(isLawyer ? colors.gold : colors.info, 0.3)}`,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: colors.white,
+                                mb: hasAttachment ? 1 : 0,
+                                wordBreak: 'break-word',
+                                whiteSpace: 'pre-wrap',
+                              }}
+                            >
                               {message.message}
                             </Typography>
-                          }
-                          secondary={
-                            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                            {hasAttachment && (
+                              <Paper
+                                onClick={() => {
+                                  const attachmentUrl = message.attachment_path || message.attachment_url || message.attachment;
+                                  if (attachmentUrl) {
+                                    window.open(attachmentUrl, '_blank');
+                                  }
+                                }}
+                                sx={{
+                                  p: 1,
+                                  mt: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  backgroundColor: colors.black,
+                                  border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  '&:hover': {
+                                    backgroundColor: alpha(colors.gold, 0.1),
+                                    borderColor: colors.gold,
+                                  },
+                                }}
+                              >
+                                <AttachFileIcon sx={{ color: colors.gold, fontSize: 18 }} />
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: colors.gold,
+                                    fontWeight: 500,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flex: 1,
+                                  }}
+                                >
+                                  {message.attachment_name || 'Attachment'}
+                                </Typography>
+                              </Paper>
+                            )}
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: colors.textSecondary,
+                                display: 'block',
+                                mt: 0.5,
+                                fontSize: '0.7rem',
+                              }}
+                            >
                               {new Date(message.created_at).toLocaleString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
+                                hour12: true,
                               })}
                             </Typography>
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
                 ) : (
-                  <Typography variant="body2" sx={{ color: colors.textSecondary, textAlign: 'center', py: 2 }}>
-                    No messages yet. Start the conversation!
-                  </Typography>
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <ChatIcon sx={{ fontSize: 48, color: colors.textSecondary, mb: 1, opacity: 0.5 }} />
+                    <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                      No messages yet. Start the conversation!
+                    </Typography>
+                  </Box>
                 )}
               </Box>
 
               {/* Send Message Section */}
               {selectedConsultation.status === 'accepted' && (
-                <Box sx={{ mt: 2 }}>
+                <Box
+                  sx={{
+                    mt: 3,
+                    p: 2,
+                    backgroundColor: colors.black,
+                    borderRadius: '12px',
+                    border: `1px solid ${alpha(colors.gold, 0.2)}`,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1.5, fontWeight: 600 }}>
+                    Send a Message
+                  </Typography>
                   <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
                     <StyledTextField
                       fullWidth
                       multiline
-                      rows={2}
-                      placeholder="Type your message..."
+                      rows={3}
+                      placeholder="Type your message here..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === 'Enter' && !e.shiftKey && (newMessage.trim() || messageAttachment)) {
                           e.preventDefault();
                           handleSendMessage();
                         }
                       }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: colors.lightBlack,
+                        },
+                      }}
                     />
-                    <input
-                      type="file"
-                      id="message-attachment"
-                      style={{ display: 'none' }}
-                      onChange={(e) => setMessageAttachment(e.target.files[0])}
-                    />
-                    <label htmlFor="message-attachment">
-                      <IconButton component="span" sx={{ color: colors.gold }}>
-                        <AttachFileIcon />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <input
+                        type="file"
+                        id="message-attachment"
+                        style={{ display: 'none' }}
+                        onChange={(e) => setMessageAttachment(e.target.files[0])}
+                      />
+                      <label htmlFor="message-attachment">
+                        <IconButton
+                          component="span"
+                          sx={{
+                            color: colors.gold,
+                            border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                            '&:hover': {
+                              backgroundColor: alpha(colors.gold, 0.1),
+                              borderColor: colors.gold,
+                            },
+                          }}
+                        >
+                          <AttachFileIcon />
+                        </IconButton>
+                      </label>
+                      <IconButton
+                        onClick={handleSendMessage}
+                        disabled={sendingMessage || (!newMessage.trim() && !messageAttachment)}
+                        sx={{
+                          color: colors.white,
+                          backgroundColor: colors.gold,
+                          '&:hover': {
+                            backgroundColor: alpha(colors.gold, 0.9),
+                          },
+                          '&:disabled': {
+                            backgroundColor: alpha(colors.gold, 0.3),
+                            color: alpha(colors.white, 0.5),
+                          },
+                        }}
+                      >
+                        {sendingMessage ? <CircularProgress size={20} sx={{ color: colors.black }} /> : <SendIcon />}
                       </IconButton>
-                    </label>
-                    <IconButton
-                      onClick={handleSendMessage}
-                      disabled={sendingMessage || (!newMessage.trim() && !messageAttachment)}
-                      sx={{ color: colors.gold }}
-                    >
-                      {sendingMessage ? <CircularProgress size={24} /> : <SendIcon />}
-                    </IconButton>
+                    </Box>
                   </Box>
                   {messageAttachment && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <AttachFileIcon sx={{ fontSize: 16, color: colors.gold }} />
-                      <Typography variant="caption" sx={{ color: colors.gold }}>
-                        {messageAttachment.name}
-                      </Typography>
+                    <Paper
+                      sx={{
+                        p: 1.5,
+                        mt: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        backgroundColor: alpha(colors.gold, 0.1),
+                        border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <AttachFileIcon sx={{ fontSize: 20, color: colors.gold }} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: colors.gold,
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {messageAttachment.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                          {(messageAttachment.size / 1024).toFixed(2)} KB
+                        </Typography>
+                      </Box>
                       <IconButton
                         size="small"
                         onClick={() => setMessageAttachment(null)}
-                        sx={{ color: colors.error, p: 0.5 }}
+                        sx={{
+                          color: colors.error,
+                          '&:hover': {
+                            backgroundColor: alpha(colors.error, 0.1),
+                          },
+                        }}
                       >
-                        <CloseIcon sx={{ fontSize: 16 }} />
+                        <CloseIcon sx={{ fontSize: 18 }} />
                       </IconButton>
-                    </Box>
+                    </Paper>
                   )}
                 </Box>
               )}

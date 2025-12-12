@@ -35,6 +35,7 @@ import {
   AttachFile as AttachFileIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { WelcomeBanner, StyledButton, StyledTextField } from '../../AdminManagement/components/StyledComponents';
@@ -105,8 +106,11 @@ export default function NewConsultationPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [lawyers, setLawyers] = useState([]);
+  const [allLawyers, setAllLawyers] = useState([]);
   const [specializations, setSpecializations] = useState([]);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
+  const [selectionMode, setSelectionMode] = useState('lawyer'); // 'lawyer' or 'specialization'
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     lawyer_id: '',
     specialization_id: '',
@@ -142,14 +146,75 @@ export default function NewConsultationPage() {
         lawyersData = lawyersRes.data.lawyers;
       }
       
+      console.log('Fetched lawyers:', lawyersData);
+      if (lawyersData.length > 0) {
+        console.log('Sample lawyer:', lawyersData[0]);
+        console.log('Sample lawyer specializations:', lawyersData[0].specializations);
+        console.log('Sample lawyer specialization:', lawyersData[0].specialization);
+      }
+      
+      setAllLawyers(lawyersData);
       setLawyers(lawyersData);
-      setSpecializations(Array.isArray(specializationsRes.data) ? specializationsRes.data : []);
+      
+      const specializationsData = Array.isArray(specializationsRes.data) 
+        ? specializationsRes.data 
+        : specializationsRes.data?.data || [];
+      console.log('Fetched specializations:', specializationsData);
+      setSpecializations(specializationsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setError('Failed to load data. Please try again.');
     } finally {
       setFetchingData(false);
     }
+  };
+
+  useEffect(() => {
+    filterLawyers();
+  }, [formData.specialization_id, searchQuery, allLawyers]);
+
+  const filterLawyers = () => {
+    let filtered = [...allLawyers];
+
+    // Filter by specialization if selected
+    if (formData.specialization_id) {
+      filtered = filtered.filter(lawyer => {
+        if (lawyer.specializations && Array.isArray(lawyer.specializations)) {
+          return lawyer.specializations.some(spec => 
+            spec.id === parseInt(formData.specialization_id) || 
+            spec.id === formData.specialization_id
+          );
+        }
+        if (lawyer.specialization) {
+          const specId = lawyer.specialization.id || lawyer.specialization;
+          return specId === parseInt(formData.specialization_id) || specId === formData.specialization_id;
+        }
+        return false;
+      });
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(lawyer => {
+        const nameMatch = lawyer.name?.toLowerCase().includes(query);
+        const emailMatch = lawyer.email?.toLowerCase().includes(query);
+        
+        let specMatch = false;
+        if (lawyer.specializations && Array.isArray(lawyer.specializations)) {
+          specMatch = lawyer.specializations.some(spec => 
+            spec.name?.toLowerCase().includes(query)
+          );
+        } else if (lawyer.specialization) {
+          const specName = lawyer.specialization.name || lawyer.specialization;
+          specMatch = specName?.toLowerCase().includes(query);
+        }
+        
+        return nameMatch || emailMatch || specMatch;
+      });
+    }
+
+    setLawyers(filtered);
   };
 
   const handleNext = () => {
@@ -528,6 +593,154 @@ export default function NewConsultationPage() {
             </Typography>
 
             <Grid container spacing={3}>
+              {/* Selection Mode Toggle */}
+              <Grid item xs={12}>
+                <Paper 
+                  sx={{ 
+                    p: 2, 
+                    mb: 3, 
+                    backgroundColor: colors.black,
+                    border: `1px solid ${alpha(colors.gold, 0.2)}`,
+                    borderRadius: '12px',
+                  }}
+                >
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ 
+                      mb: 2, 
+                      color: colors.textSecondary,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Choose Selection Method
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant={selectionMode === 'specialization' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setSelectionMode('specialization');
+                        setFormData({ ...formData, lawyer_id: '' });
+                        setSelectedLawyer(null);
+                      }}
+                      sx={{
+                        flex: 1,
+                        backgroundColor: selectionMode === 'specialization' 
+                          ? colors.gold 
+                          : 'transparent',
+                        color: selectionMode === 'specialization' 
+                          ? colors.black 
+                          : colors.gold,
+                        borderColor: colors.gold,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                          backgroundColor: selectionMode === 'specialization' 
+                            ? alpha(colors.gold, 0.9) 
+                            : alpha(colors.gold, 0.1),
+                        },
+                      }}
+                    >
+                      Select by Specialization First
+                    </Button>
+                    <Button
+                      variant={selectionMode === 'lawyer' ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setSelectionMode('lawyer');
+                        setFormData({ ...formData, specialization_id: '' });
+                      }}
+                      sx={{
+                        flex: 1,
+                        backgroundColor: selectionMode === 'lawyer' 
+                          ? colors.gold 
+                          : 'transparent',
+                        color: selectionMode === 'lawyer' 
+                          ? colors.black 
+                          : colors.gold,
+                        borderColor: colors.gold,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                          backgroundColor: selectionMode === 'lawyer' 
+                            ? alpha(colors.gold, 0.9) 
+                            : alpha(colors.gold, 0.1),
+                        },
+                      }}
+                    >
+                      Select Lawyer Directly
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* Specialization Selection (if mode is specialization) */}
+              {selectionMode === 'specialization' && (
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel sx={{ color: colors.textSecondary }}>Select Specialization</InputLabel>
+                    <Select
+                      value={formData.specialization_id}
+                      onChange={(e) => {
+                        setFormData({ ...formData, specialization_id: e.target.value, lawyer_id: '' });
+                        setSelectedLawyer(null);
+                      }}
+                      sx={{
+                        color: colors.white,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: alpha(colors.gold, 0.3),
+                        },
+                      }}
+                    >
+                      <MenuItem value="">Select Specialization</MenuItem>
+                      {Array.isArray(specializations) && specializations.map((spec) => (
+                        <MenuItem key={spec.id} value={spec.id}>
+                          {spec.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              {/* Search */}
+              <Grid item xs={12} md={selectionMode === 'specialization' ? 6 : 12}>
+                <StyledTextField
+                  fullWidth
+                  label="Search Lawyers"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, email, or specialization..."
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ mr: 1, color: colors.gold }}>
+                        <PersonIcon />
+                      </Box>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              {/* Clear Filters */}
+              {(formData.specialization_id || searchQuery) && (
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                      Showing {lawyers.length} lawyer{lawyers.length !== 1 ? 's' : ''}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setFormData({ ...formData, specialization_id: '' });
+                        setSearchQuery('');
+                      }}
+                      sx={{ color: colors.gold, textTransform: 'none' }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </Box>
+                </Grid>
+              )}
+
+              {/* Lawyers List */}
               <Grid item xs={12}>
                 <Typography 
                   variant="h6" 
@@ -540,7 +753,9 @@ export default function NewConsultationPage() {
                     gap: 1,
                   }}
                 >
-                  Select Lawyer (Optional)
+                  {selectionMode === 'specialization' && formData.specialization_id
+                    ? 'Select Lawyer from Specialization'
+                    : 'Select Lawyer (Optional)'}
                 </Typography>
                 {fetchingData ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -549,7 +764,31 @@ export default function NewConsultationPage() {
                 ) : Array.isArray(lawyers) && lawyers.length > 0 ? (
                   <Box>
                     <Grid container spacing={2}>
-                      {lawyers.slice(0, 6).map((lawyer) => (
+                      {lawyers.slice(0, 6).map((lawyer) => {
+                        // Get specializations - handle multiple formats
+                        let lawyerSpecs = [];
+                        if (lawyer.specializations) {
+                          if (Array.isArray(lawyer.specializations)) {
+                            lawyerSpecs = lawyer.specializations;
+                          } else if (typeof lawyer.specializations === 'object') {
+                            lawyerSpecs = [lawyer.specializations];
+                          }
+                        } else if (lawyer.specialization) {
+                          if (Array.isArray(lawyer.specialization)) {
+                            lawyerSpecs = lawyer.specialization;
+                          } else if (typeof lawyer.specialization === 'object') {
+                            lawyerSpecs = [lawyer.specialization];
+                          } else {
+                            lawyerSpecs = [{ name: lawyer.specialization }];
+                          }
+                        }
+                        
+                        // Debug log
+                        if (lawyerSpecs.length === 0) {
+                          console.log('Lawyer without specializations:', lawyer.name, lawyer);
+                        }
+
+                        return (
                         <Grid item xs={12} sm={6} md={4} key={lawyer.id}>
                         <LawyerCard
                           selected={formData.lawyer_id === lawyer.id.toString() || formData.lawyer_id === lawyer.id}
@@ -597,17 +836,32 @@ export default function NewConsultationPage() {
                                   >
                                     {lawyer.name}
                                   </Typography>
-                                  {lawyer.specialization && (
-                                    <Typography 
-                                      variant="body2" 
-                                      sx={{ 
-                                        color: formData.lawyer_id === lawyer.id.toString() || formData.lawyer_id === lawyer.id
-                                          ? alpha(colors.gold, 0.9)
-                                          : alpha(colors.gold, 0.7),
-                                        fontSize: '0.875rem',
-                                      }}
-                                    >
-                                      {lawyer.specialization.name}
+                                  {lawyerSpecs.length > 0 ? (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5, justifyContent: 'center' }}>
+                                      {lawyerSpecs.map((spec, idx) => {
+                                        const specName = spec?.name || spec?.title || (typeof spec === 'string' ? spec : 'Specialization');
+                                        return (
+                                          <Chip
+                                            key={idx}
+                                            label={specName}
+                                            size="small"
+                                            sx={{
+                                              backgroundColor: formData.lawyer_id === lawyer.id.toString() || formData.lawyer_id === lawyer.id
+                                                ? alpha(colors.gold, 0.3)
+                                                : alpha(colors.gold, 0.2),
+                                              color: colors.gold,
+                                              fontSize: '0.7rem',
+                                              height: '20px',
+                                              fontWeight: 500,
+                                              border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                                            }}
+                                          />
+                                        );
+                                      })}
+                                    </Box>
+                                  ) : (
+                                    <Typography variant="caption" sx={{ color: colors.textSecondary, mt: 0.5, fontStyle: 'italic' }}>
+                                      No specializations listed
                                     </Typography>
                                   )}
                                 </Box>
@@ -629,7 +883,8 @@ export default function NewConsultationPage() {
                             </CardContent>
                           </LawyerCard>
                         </Grid>
-                      ))}
+                        );
+                      })}
                     </Grid>
                     {lawyers.length > 6 && (
                       <Alert severity="info" sx={{ mt: 2 }}>
@@ -639,32 +894,11 @@ export default function NewConsultationPage() {
                   </Box>
                 ) : (
                   <Alert severity="info" sx={{ backgroundColor: alpha(colors.gold, 0.1), color: colors.gold }}>
-                    No lawyers available at the moment. You can still submit your consultation and we'll assign a lawyer.
+                    {formData.specialization_id || searchQuery
+                      ? 'No lawyers found matching your filters. Try adjusting your search criteria.'
+                      : 'No lawyers available at the moment. You can still submit your consultation and we\'ll assign a lawyer.'}
                   </Alert>
                 )}
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: colors.textSecondary }}>Specialization (Optional)</InputLabel>
-                  <Select
-                    value={formData.specialization_id}
-                    onChange={(e) => setFormData({ ...formData, specialization_id: e.target.value })}
-                    sx={{
-                      color: colors.white,
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: alpha(colors.gold, 0.3),
-                      },
-                    }}
-                  >
-                    <MenuItem value="">Select Specialization (Optional)</MenuItem>
-                    {Array.isArray(specializations) && specializations.map((spec) => (
-                      <MenuItem key={spec.id} value={spec.id}>
-                        {spec.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </Grid>
 
               {formData.preferred_channel === 'appointment' && (
@@ -931,11 +1165,30 @@ export default function NewConsultationPage() {
                           <Typography variant="body1" sx={{ color: colors.white, fontWeight: 'bold' }}>
                             {selectedLawyer.name}
                           </Typography>
-                          {selectedLawyer.specialization && (
-                            <Typography variant="body2" sx={{ color: colors.gold }}>
-                              {selectedLawyer.specialization.name}
-                            </Typography>
-                          )}
+                          {(() => {
+                            const specs = selectedLawyer.specializations && Array.isArray(selectedLawyer.specializations)
+                              ? selectedLawyer.specializations
+                              : selectedLawyer.specialization
+                              ? [selectedLawyer.specialization]
+                              : [];
+                            return specs.length > 0 && (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                {specs.map((spec, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    label={spec.name || spec}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: alpha(colors.gold, 0.2),
+                                      color: colors.gold,
+                                      fontSize: '0.75rem',
+                                      fontWeight: 500,
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            );
+                          })()}
                         </Box>
                       </Box>
                     </Box>

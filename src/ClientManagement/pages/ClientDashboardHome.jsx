@@ -37,8 +37,11 @@ export default function ClientDashboardHome() {
               // Return empty data but let the error propagate so interceptor can handle it
               throw err;
             }
-            // For other errors, return empty data
-            console.error('Failed to fetch consultations:', err);
+            // For 404 or other errors, return empty data silently
+            // Don't log 404 errors - endpoint may not be implemented yet
+            if (err.response?.status !== 404) {
+              console.error('Failed to fetch consultations:', err);
+            }
             return { data: [] };
           }),
           appointmentsService.getAppointments().catch((err) => {
@@ -47,8 +50,11 @@ export default function ClientDashboardHome() {
               // Return empty data but let the error propagate so interceptor can handle it
               throw err;
             }
-            // For other errors, return empty data
-            console.error('Failed to fetch appointments:', err);
+            // For 404 or other errors, return empty data silently
+            // Don't log 404 errors - endpoint may not be implemented yet
+            if (err.response?.status !== 404) {
+              console.error('Failed to fetch appointments:', err);
+            }
             return { data: [] };
           }),
         ]);

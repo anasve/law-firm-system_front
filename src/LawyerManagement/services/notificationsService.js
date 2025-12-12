@@ -13,7 +13,7 @@ export const notificationsService = {
 
   // Mark notification as read
   markAsRead: (id) => {
-    return api.post(`/notifications/${id}/read`);
+    return api.put(`/notifications/${id}/read`);
   },
 
   // Mark all notifications as read

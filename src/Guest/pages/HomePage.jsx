@@ -130,14 +130,57 @@ export default function HomePage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [lawsRes, specializationsRes] = await Promise.all([
+      const [lawsRes, specializationsRes, lawyersRes] = await Promise.all([
         guestService.getLaws(),
         guestService.getSpecializations(),
+        guestService.getLawyers(),
       ]);
-      setLaws(Array.isArray(lawsRes.data) ? lawsRes.data : []);
-      setSpecializations(Array.isArray(specializationsRes.data) ? specializationsRes.data : []);
+      
+      console.log('Laws response:', lawsRes);
+      console.log('Lawyers response:', lawyersRes);
+      console.log('Specializations response:', specializationsRes);
+      
+      // Handle different response formats for laws
+      let lawsData = [];
+      if (Array.isArray(lawsRes.data)) {
+        lawsData = lawsRes.data;
+      } else if (lawsRes.data?.data && Array.isArray(lawsRes.data.data)) {
+        lawsData = lawsRes.data.data;
+      } else if (lawsRes.data?.laws && Array.isArray(lawsRes.data.laws)) {
+        lawsData = lawsRes.data.laws;
+      }
+      setLaws(lawsData);
+      console.log('Extracted laws:', lawsData);
+      
+      // Handle different response formats for lawyers
+      let lawyersData = [];
+      if (Array.isArray(lawyersRes.data)) {
+        lawyersData = lawyersRes.data;
+      } else if (lawyersRes.data?.data && Array.isArray(lawyersRes.data.data)) {
+        lawyersData = lawyersRes.data.data;
+      } else if (lawyersRes.data?.lawyers && Array.isArray(lawyersRes.data.lawyers)) {
+        lawyersData = lawyersRes.data.lawyers;
+      }
+      setLawyers(lawyersData);
+      console.log('Extracted lawyers:', lawyersData);
+      
+      // Handle different response formats for specializations
+      let specializationsData = [];
+      if (Array.isArray(specializationsRes.data)) {
+        specializationsData = specializationsRes.data;
+      } else if (specializationsRes.data?.data && Array.isArray(specializationsRes.data.data)) {
+        specializationsData = specializationsRes.data.data;
+      } else if (specializationsRes.data?.specializations && Array.isArray(specializationsRes.data.specializations)) {
+        specializationsData = specializationsRes.data.specializations;
+      }
+      setSpecializations(specializationsData);
+      console.log('Extracted specializations:', specializationsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      console.error('Error response:', error.response);
+      setLaws([]);
+      setLawyers([]);
+      setSpecializations([]);
     } finally {
       setLoading(false);
     }
@@ -149,9 +192,23 @@ export default function HomePage() {
       if (searchTerm) params.search = searchTerm;
       if (selectedSpecialization) params.specialization_id = selectedSpecialization;
       const response = await guestService.getLawyers(params);
-      setLawyers(Array.isArray(response.data) ? response.data : []);
+      console.log('Fetch lawyers response:', response);
+      
+      // Handle different response formats
+      let lawyersData = [];
+      if (Array.isArray(response.data)) {
+        lawyersData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        lawyersData = response.data.data;
+      } else if (response.data?.lawyers && Array.isArray(response.data.lawyers)) {
+        lawyersData = response.data.lawyers;
+      }
+      setLawyers(lawyersData);
+      console.log('Filtered lawyers:', lawyersData);
     } catch (error) {
       console.error('Failed to fetch lawyers:', error);
+      console.error('Error response:', error.response);
+      setLawyers([]);
     }
   };
 
@@ -647,7 +704,7 @@ export default function HomePage() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
             تفاصيل القانون
           </Typography>
           <IconButton onClick={() => setLawDialogOpen(false)} sx={{ color: colors.white }}>

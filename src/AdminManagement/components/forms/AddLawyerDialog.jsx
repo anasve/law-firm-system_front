@@ -16,6 +16,11 @@ import {
   Divider,
   Snackbar,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
@@ -141,14 +146,33 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
     }
   }, [open]);
 
+  const showSnackbar = (message, severity = 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
   const handleInput = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    if (name === 'specialization_ids' && Array.isArray(value)) {
+      // Convert to numbers and filter out invalid values
+      setForm(prev => ({ ...prev, [name]: value.map(id => Number(id)).filter(id => !isNaN(id) && id > 0) }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showSnackbar('Please select a valid image file', 'error');
+        return;
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showSnackbar('Image size must be less than 10MB', 'error');
+        return;
+      }
       setForm(prev => ({ ...prev, photo: file }));
       setImagePreview(URL.createObjectURL(file));
     }
@@ -157,12 +181,13 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
   const handleCertificate = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showSnackbar('Certificate file size must be less than 10MB', 'error');
+        return;
+      }
       setForm(prev => ({ ...prev, certificate: file }));
     }
-  };
-
-  const showSnackbar = (message, severity = 'error') => {
-    setSnackbar({ open: true, message, severity });
   };
 
   const handleSubmit = async () => {
@@ -181,20 +206,53 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
       return;
     }
 
+    // Validate certificate is required
+    if (!form.certificate || !(form.certificate instanceof File)) {
+      showSnackbar('Certificate is required. Please upload a certificate file.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, val]) => {
-        if (val !== null && val !== '' && val !== undefined) {
-          if (key === 'specialization_ids') {
-            if (Array.isArray(val) && val.length > 0) {
-              val.forEach(id => formData.append('specialization_ids[]', id));
-            }
-          } else {
-            formData.append(key, val);
-          }
+      
+      // Add basic fields
+      if (form.name) formData.append('name', form.name);
+      if (form.email) formData.append('email', form.email);
+      if (form.age) formData.append('age', form.age);
+      if (form.password) formData.append('password', form.password);
+      if (form.password_confirmation) formData.append('password_confirmation', form.password_confirmation);
+      
+      // Handle specialization_ids - convert to numbers and append
+      if (Array.isArray(form.specialization_ids) && form.specialization_ids.length > 0) {
+        const validIds = form.specialization_ids.map(id => Number(id)).filter(id => !isNaN(id) && id > 0);
+        validIds.forEach(id => {
+          formData.append('specialization_ids[]', id);
+        });
+      }
+      
+      // Handle files - use 'image' instead of 'photo' to match API
+      if (form.photo && form.photo instanceof File) {
+        // Validate it's an image before appending
+        if (form.photo.type.startsWith('image/')) {
+          formData.append('image', form.photo);
+        } else {
+          showSnackbar('Photo must be a valid image file', 'error');
+          setLoading(false);
+          return;
         }
-      });
+      }
+      
+      // Certificate is required - already validated at the start of handleSubmit
+      // Ensure certificate is sent as a file
+      if (form.certificate && form.certificate instanceof File) {
+        formData.append('certificate', form.certificate);
+      } else {
+        // This should not happen as we validate at the start, but double check
+        showSnackbar('Certificate must be a valid file', 'error');
+        setLoading(false);
+        return;
+      }
 
       await usersService.createLawyer(formData);
       showSnackbar('Lawyer added successfully!', 'success');
@@ -203,8 +261,23 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
         if (onSuccess) onSuccess();
       }, 1500);
     } catch (err) {
-      console.error(err);
-      const errorMessage = err.response?.data?.message || 'Failed to add lawyer';
+      console.error('Error creating lawyer:', err);
+      console.error('Error response:', err.response?.data);
+      
+      // Better error handling
+      let errorMessage = 'Failed to add lawyer';
+      if (err.response?.data) {
+        if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.errors) {
+          // Handle validation errors
+          const errors = err.response.data.errors;
+          const errorMessages = Object.entries(errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('\n');
+          errorMessage = errorMessages;
+        }
+      }
       showSnackbar(errorMessage, 'error');
     } finally {
       setLoading(false);
@@ -235,7 +308,7 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
         fullWidth
       >
         <StyledDialogTitle>
-          <Typography variant="h6" fontWeight="bold">
+          <Typography variant="h6" component="div" fontWeight="bold">
             Add New Lawyer
           </Typography>
           <IconButton
@@ -366,37 +439,114 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
               <Typography variant="subtitle2" sx={{ color: colors.gold, mb: 2, fontWeight: 'bold' }}>
                 Specializations
               </Typography>
-              <StyledTextField
-                select
-                SelectProps={{ multiple: true }}
-                name="specialization_ids"
-                label="Select Specializations"
-                value={form.specialization_ids || []}
-                onChange={handleInput}
-                fullWidth
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => {
-                      const spec = specializations.find(s => s.id === value);
-                      return spec ? (
-                        <Chip key={value} label={spec.name} size="small" sx={{ backgroundColor: alpha(colors.gold, 0.2), color: colors.gold }} />
-                      ) : null;
-                    })}
-                  </Box>
-                )}
-              >
-                {specializations.map((spec) => (
-                  <MenuItem key={spec.id} value={spec.id} sx={{ color: colors.white }}>
-                    {spec.name}
-                  </MenuItem>
-                ))}
-              </StyledTextField>
+              <FormControl fullWidth>
+                <InputLabel sx={{ color: colors.textSecondary }}>Select Specializations</InputLabel>
+                <Select
+                  multiple
+                  name="specialization_ids"
+                  value={form.specialization_ids || []}
+                  onChange={handleInput}
+                  sx={{
+                    color: colors.white,
+                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(colors.gold, 0.3),
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(colors.gold, 0.6),
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: colors.gold,
+                    },
+                    '& .MuiSelect-icon': {
+                      color: colors.gold,
+                    },
+                  }}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.length === 0 ? (
+                        <Typography sx={{ color: colors.textSecondary, fontSize: '0.875rem' }}>
+                          No specializations selected
+                        </Typography>
+                      ) : (
+                        selected.map((value) => {
+                          const spec = specializations.find(s => s.id === value);
+                          return spec ? (
+                            <Chip 
+                              key={value} 
+                              label={spec.name} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: alpha(colors.gold, 0.2), 
+                                color: colors.gold,
+                                fontWeight: 'bold',
+                                border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                              }} 
+                            />
+                          ) : null;
+                        })
+                      )}
+                    </Box>
+                  )}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        backgroundColor: colors.lightBlack,
+                        color: colors.white,
+                        border: `1px solid ${alpha(colors.gold, 0.2)}`,
+                        maxHeight: 300,
+                        '& .MuiMenuItem-root': {
+                          color: colors.white,
+                          '&:hover': {
+                            backgroundColor: alpha(colors.gold, 0.2),
+                            color: colors.gold,
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: alpha(colors.gold, 0.3),
+                            color: colors.gold,
+                            fontWeight: 'bold',
+                            '&:hover': {
+                              backgroundColor: alpha(colors.gold, 0.4),
+                            },
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {specializations.length === 0 ? (
+                    <MenuItem disabled sx={{ color: colors.textSecondary }}>
+                      No specializations available
+                    </MenuItem>
+                  ) : (
+                    specializations.map((spec) => (
+                      <MenuItem key={spec.id} value={spec.id}>
+                        <Checkbox
+                          checked={(form.specialization_ids || []).indexOf(spec.id) > -1}
+                          sx={{
+                            color: colors.gold,
+                            '&.Mui-checked': {
+                              color: colors.gold,
+                            },
+                          }}
+                        />
+                        <ListItemText primary={spec.name} />
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+              {form.specialization_ids && form.specialization_ids.length > 0 && (
+                <Typography variant="caption" sx={{ color: colors.textSecondary, mt: 1, display: 'block' }}>
+                  {form.specialization_ids.length} specialization{form.specialization_ids.length > 1 ? 's' : ''} selected
+                </Typography>
+              )}
             </Box>
 
             {/* Certificate Upload */}
             <Box>
               <Typography variant="subtitle2" sx={{ color: colors.gold, mb: 2, fontWeight: 'bold' }}>
-                Certificate
+                Certificate *
               </Typography>
               <FileUploadBox>
                 <AttachFileIcon sx={{ color: colors.gold }} />
@@ -411,17 +561,23 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
                       '&:hover': { borderColor: colors.gold, backgroundColor: alpha(colors.gold, 0.1) },
                     }}
                   >
-                    {form.certificate ? 'Change Certificate' : 'Upload Certificate'}
+                    {form.certificate ? 'Change Certificate' : 'Upload Certificate *'}
                     <input
                       type="file"
                       hidden
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={handleCertificate}
+                      required
                     />
                   </Button>
                   {form.certificate && (
                     <Typography variant="caption" sx={{ color: colors.textSecondary, display: 'block', mt: 1 }}>
                       Selected: {form.certificate.name}
+                    </Typography>
+                  )}
+                  {!form.certificate && (
+                    <Typography variant="caption" sx={{ color: colors.textSecondary, display: 'block', mt: 1 }}>
+                      Certificate is required (PDF, JPG, PNG)
                     </Typography>
                   )}
                 </Box>

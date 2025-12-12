@@ -3,13 +3,17 @@ import axios from "axios";
 // Use separate token key for Lawyer to avoid conflicts with other roles
 const LAWYER_TOKEN_KEY = "lawyerToken";
 
+// Use environment variable or default to Laravel API URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
 export const api = axios.create({
-  baseURL: import.meta.env.DEV ? "/api/lawyer" : "http://127.0.0.1:8000/api/lawyer",
+  baseURL: `${API_BASE_URL}/lawyer`,
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 10000, // 10 seconds
 });
 
 api.interceptors.request.use(
@@ -17,6 +21,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem(LAWYER_TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // If data is FormData, remove Content-Type header to let browser set it
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },

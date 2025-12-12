@@ -43,7 +43,6 @@ import LoginEmployee from "./EmployeeManagement/LoginEmployee";
 import {
   EmployeeDashboardHome,
   ClientsManagement,
-  ConsultationsManagement,
   AvailabilityManagement,
   AppointmentsManagement,
   ProfilePage as EmployeeProfilePage,
@@ -95,7 +94,6 @@ function App() {
         <Route element={<EmployeeLayout />}>
           <Route path="/employee/dashboard" element={<EmployeeDashboardHome />} />
           <Route path="/employee/clients" element={<ClientsManagement />} />
-          <Route path="/employee/consultations" element={<ConsultationsManagement />} />
           <Route path="/employee/availability" element={<AvailabilityManagement />} />
           <Route path="/employee/appointments" element={<AppointmentsManagement />} />
           <Route path="/employee/profile" element={<EmployeeProfilePage />} />

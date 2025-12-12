@@ -44,7 +44,7 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 import { WelcomeBanner, StyledButton, StyledTextField } from '../../AdminManagement/components/StyledComponents';
 import { colors } from '../../AdminManagement/constants';
-import { appointmentsService, getToken } from '../services';
+import { appointmentsService, clientsService, lawyersService, getToken } from '../services';
 import ConfirmationDialog from '../../AdminManagement/components/feedback/ConfirmationDialog';
 import AppointmentCalendar from '../components/AppointmentCalendar';
 import { useNavigate } from 'react-router-dom';
@@ -93,6 +93,15 @@ export default function AppointmentsManagement() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [lawyers, setLawyers] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [editFormData, setEditFormData] = useState({
+    datetime: '',
+    type: 'online',
+    meeting_link: '',
+    notes: '',
+    status: 'pending',
+  });
 
   // Filters
   const [filters, setFilters] = useState({
@@ -105,6 +114,13 @@ export default function AppointmentsManagement() {
 
   useEffect(() => {
     fetchAppointments();
+    fetchLawyers();
+    fetchClients();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchAppointments();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -112,7 +128,6 @@ export default function AppointmentsManagement() {
   }, [appointments, filters, selectedTab]);
 
   const fetchAppointments = async () => {
-    // Check if user is authenticated
     const token = getToken();
     if (!token) {
       setError('Please login first');
@@ -130,24 +145,63 @@ export default function AppointmentsManagement() {
       if (filters.client_id) params.client_id = filters.client_id;
 
       const response = await appointmentsService.getAppointments(params);
-      const data = Array.isArray(response.data) ? response.data : [];
+      
+      // Handle different response formats
+      let data = [];
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response.data?.appointments && Array.isArray(response.data.appointments)) {
+        data = response.data.appointments;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        data = response.data.items;
+      }
+      
       setAppointments(data);
-      setFilteredAppointments(data);
     } catch (error) {
       console.error('Failed to fetch appointments:', error);
+      let errorMessage = 'Failed to load appointments. Please try again.';
+      
       if (error.response?.status === 401) {
-        setError('Session expired. Please login again.');
+        errorMessage = 'Session expired. Please login again.';
         navigate('/employee/login');
-      } else {
-        const errorMessage = error.response?.data?.message || 
-                            error.message || 
-                            'Failed to load appointments. Please try again.';
-        setError(errorMessage);
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
+      setError(errorMessage);
       setAppointments([]);
-      setFilteredAppointments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLawyers = async () => {
+    try {
+      const response = await lawyersService.getLawyers();
+      const data = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data?.data || response.data?.lawyers || []);
+      setLawyers(data);
+    } catch (error) {
+      console.error('Failed to fetch lawyers:', error);
+      setLawyers([]);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await clientsService.getClients({ limit: 100 });
+      const data = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data?.data || response.data?.clients || []);
+      setClients(data);
+    } catch (error) {
+      console.error('Failed to fetch clients:', error);
+      setClients([]);
     }
   };
 
@@ -198,13 +252,20 @@ export default function AppointmentsManagement() {
     try {
       setActionLoading(true);
       setError('');
-      await appointmentsService.confirmAppointment(selectedAppointment.id);
-      setSuccess('Appointment confirmed successfully');
+      setSuccess('');
+      const response = await appointmentsService.confirmAppointment(selectedAppointment.id);
+      const successMessage = response.data?.message || 'Appointment confirmed successfully';
+      setSuccess(successMessage);
       setConfirmDialogOpen(false);
       await fetchAppointments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to confirm appointment');
+      console.error('Failed to confirm appointment:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors ? 
+                          Object.values(error.response.data.errors).flat().join(', ') :
+                          'Failed to confirm appointment';
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -215,13 +276,19 @@ export default function AppointmentsManagement() {
     try {
       setActionLoading(true);
       setError('');
+      setSuccess('');
       await appointmentsService.cancelAppointment(selectedAppointment.id, reason);
       setSuccess('Appointment cancelled successfully');
       setCancelDialogOpen(false);
       await fetchAppointments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to cancel appointment');
+      console.error('Failed to cancel appointment:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors ? 
+                          Object.values(error.response.data.errors).flat().join(', ') :
+                          'Failed to cancel appointment';
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -245,21 +312,73 @@ export default function AppointmentsManagement() {
     }
   };
 
-  const handleUpdate = async (data) => {
+  const handleUpdate = async () => {
     if (!selectedAppointment) return;
     try {
       setActionLoading(true);
       setError('');
-      await appointmentsService.updateAppointment(selectedAppointment.id, data);
-      setSuccess('Appointment updated successfully');
+      setSuccess('');
+      
+      // Prepare data according to API documentation
+      const data = {
+        datetime: editFormData.datetime,
+        type: editFormData.type,
+        status: editFormData.status,
+      };
+      
+      // Add meeting_link only if type is online
+      if (editFormData.type === 'online' && editFormData.meeting_link) {
+        data.meeting_link = editFormData.meeting_link.trim();
+      } else {
+        data.meeting_link = null;
+      }
+      
+      // Add notes if provided
+      if (editFormData.notes && editFormData.notes.trim()) {
+        data.notes = editFormData.notes.trim();
+      } else {
+        data.notes = null;
+      }
+      
+      console.log('Updating appointment with data:', data);
+      
+      const response = await appointmentsService.updateAppointment(selectedAppointment.id, data);
+      const successMessage = response.data?.message || 'Appointment updated successfully';
+      setSuccess(successMessage);
       setEditDialogOpen(false);
+      setSelectedAppointment(null);
       await fetchAppointments();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update appointment');
+      console.error('Failed to update appointment:', error);
+      let errorMessage = 'Failed to update appointment';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        errorMessage = errorMessages.join(', ');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleEditClick = (appointment) => {
+    setSelectedAppointment(appointment);
+    const appointmentDate = new Date(appointment.datetime);
+    setEditFormData({
+      datetime: appointmentDate.toISOString().slice(0, 16), // Format for datetime-local input
+      type: appointment.type || 'online',
+      meeting_link: appointment.meeting_link || '',
+      notes: appointment.notes || '',
+      status: appointment.status || 'pending',
+    });
+    setEditDialogOpen(true);
   };
 
   const getUpcomingCount = () => {
@@ -370,7 +489,7 @@ export default function AppointmentsManagement() {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth>
               <InputLabel sx={{ color: colors.textSecondary }}>Status</InputLabel>
               <Select
@@ -397,7 +516,51 @@ export default function AppointmentsManagement() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: colors.textSecondary }}>Lawyer</InputLabel>
+              <Select
+                value={filters.lawyer_id}
+                onChange={(e) => setFilters({ ...filters, lawyer_id: e.target.value })}
+                sx={{
+                  color: colors.white,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.3),
+                  },
+                }}
+              >
+                <MenuItem value="">All Lawyers</MenuItem>
+                {lawyers.map((lawyer) => (
+                  <MenuItem key={lawyer.id} value={lawyer.id}>
+                    {lawyer.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: colors.textSecondary }}>Client</InputLabel>
+              <Select
+                value={filters.client_id}
+                onChange={(e) => setFilters({ ...filters, client_id: e.target.value })}
+                sx={{
+                  color: colors.white,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.3),
+                  },
+                }}
+              >
+                <MenuItem value="">All Clients</MenuItem>
+                {clients.map((client) => (
+                  <MenuItem key={client.id} value={client.id}>
+                    {client.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
             <Button
               fullWidth
               variant="outlined"
@@ -484,7 +647,7 @@ export default function AppointmentsManagement() {
                 appointmentDate.toDateString() === new Date().toDateString();
 
               return (
-                <Grid item xs={12} md={6} lg={4} key={appointment.id}>
+                <Grid item xs={12} md={6} key={appointment.id}>
                   <Card
                     sx={{
                       backgroundColor: colors.lightBlack,
@@ -629,10 +792,7 @@ export default function AppointmentsManagement() {
                             <Tooltip title="Edit">
                               <IconButton
                                 size="small"
-                                onClick={() => {
-                                  setSelectedAppointment(appointment);
-                                  setEditDialogOpen(true);
-                                }}
+                                onClick={() => handleEditClick(appointment)}
                                 sx={{ color: colors.gold, mr: 1 }}
                               >
                                 <EditIcon />
@@ -693,7 +853,7 @@ export default function AppointmentsManagement() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
             Appointment Details
           </Typography>
           <IconButton onClick={() => setDetailsDialogOpen(false)} sx={{ color: colors.white }}>
@@ -857,6 +1017,114 @@ export default function AppointmentsManagement() {
         message="Are you sure you want to delete this appointment? This action cannot be undone."
         loading={actionLoading}
       />
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedAppointment(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.lightBlack,
+            color: colors.white,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
+            Edit Appointment
+          </Typography>
+          <IconButton onClick={() => {
+            setEditDialogOpen(false);
+            setSelectedAppointment(null);
+          }} sx={{ color: colors.white }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <StyledTextField
+              fullWidth
+              type="datetime-local"
+              label="Date & Time"
+              value={editFormData.datetime}
+              onChange={(e) => setEditFormData({ ...editFormData, datetime: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: colors.textSecondary }}>Type</InputLabel>
+              <Select
+                value={editFormData.type}
+                onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                sx={{
+                  color: colors.white,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.3),
+                  },
+                }}
+              >
+                <MenuItem value="online">Online</MenuItem>
+                <MenuItem value="in_office">In Office</MenuItem>
+                <MenuItem value="phone">Phone</MenuItem>
+              </Select>
+            </FormControl>
+            {editFormData.type === 'online' && (
+              <StyledTextField
+                fullWidth
+                label="Meeting Link"
+                value={editFormData.meeting_link}
+                onChange={(e) => setEditFormData({ ...editFormData, meeting_link: e.target.value })}
+                placeholder="https://meet.google.com/xxx"
+              />
+            )}
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: colors.textSecondary }}>Status</InputLabel>
+              <Select
+                value={editFormData.status}
+                onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                sx={{
+                  color: colors.white,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.3),
+                  },
+                }}
+              >
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="confirmed">Confirmed</MenuItem>
+                <MenuItem value="done">Done</MenuItem>
+                <MenuItem value="cancelled">Cancelled</MenuItem>
+              </Select>
+            </FormControl>
+            <StyledTextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Notes"
+              value={editFormData.notes}
+              onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+              placeholder="Additional notes..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => {
+              setEditDialogOpen(false);
+              setSelectedAppointment(null);
+            }}
+            sx={{ color: colors.textSecondary }}
+          >
+            Cancel
+          </Button>
+          <StyledButton onClick={handleUpdate} disabled={actionLoading || !editFormData.datetime}>
+            {actionLoading ? <CircularProgress size={24} sx={{ color: colors.black }} /> : 'Update Appointment'}
+          </StyledButton>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

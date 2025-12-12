@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Badge, IconButton, Popover, Box, Typography, Button, Divider, List, ListItem, ListItemText, ListItemButton, CircularProgress, Tooltip } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -35,8 +35,15 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [allMarkedAsRead, setAllMarkedAsRead] = useState(false);
+  const allMarkedAsReadRef = useRef(false);
 
   const open = Boolean(anchorEl);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    allMarkedAsReadRef.current = allMarkedAsRead;
+  }, [allMarkedAsRead]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -51,17 +58,54 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, []);
 
+  // Update unread count when popover opens (user views notifications)
+  useEffect(() => {
+    if (open) {
+      // Refresh unread count when user opens the notifications popover
+      fetchUnreadCount();
+      fetchNotifications();
+    }
+  }, [open]);
+
   const fetchUnreadCount = async () => {
     try {
       const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.data?.count || response.data?.unread_count || 0);
+      // Use unread_count from API response (Laravel returns it)
+      const count = response.data?.unread_count || response.data?.count || 0;
+      // If we marked all as read, keep count at 0 unless there are truly new notifications
+      // Use ref to get the latest value (avoid closure issues)
+      if (allMarkedAsReadRef.current) {
+        // Calculate from local notifications to ensure accuracy
+        const localCount = notifications.filter(n => !n.read_at).length;
+        // If local count is 0, keep it at 0 (we marked all as read)
+        // If local count > 0, it means new notifications arrived, so use API count
+        if (localCount === 0) {
+          setUnreadCount(0);
+        } else {
+          // New notifications arrived after marking all as read
+          setUnreadCount(count);
+          setAllMarkedAsRead(false);
+        }
+      } else {
+        setUnreadCount(count);
+        // Update flag based on count
+        if (count === 0) {
+          setAllMarkedAsRead(true);
+        }
+      }
     } catch (error) {
-      // If endpoint doesn't exist (404), silently fail
+      // If endpoint doesn't exist (404), calculate from local notifications
       if (error.response?.status === 404) {
         console.warn('Notifications endpoint not implemented in backend');
-        setUnreadCount(0);
+        const localCount = notifications.filter(n => !n.read_at).length;
+        setUnreadCount(localCount);
+        setAllMarkedAsRead(localCount === 0);
       } else {
         console.error('Failed to fetch unread count:', error);
+        // Fallback to local count
+        const localCount = notifications.filter(n => !n.read_at).length;
+        setUnreadCount(localCount);
+        setAllMarkedAsRead(localCount === 0);
       }
     }
   };
@@ -73,15 +117,48 @@ export default function NotificationBell() {
       const data = Array.isArray(response.data) 
         ? response.data 
         : (response.data?.data || response.data?.notifications || []);
-      setNotifications(data);
+      // Merge with existing notifications to preserve read_at status
+      setNotifications(prev => {
+        const prevMap = new Map(prev.map(n => [n.id, n]));
+        const merged = data.map(n => {
+          const existing = prevMap.get(n.id);
+          // If notification was marked as read locally but API doesn't have read_at, preserve it
+          if (existing?.read_at && !n.read_at) {
+            return { ...n, read_at: existing.read_at };
+          }
+          return n;
+        });
+        // Calculate unread count from merged notifications
+        const localUnreadCount = merged.filter(n => !n.read_at).length;
+        // If we marked all as read, ensure all notifications have read_at
+        // Use ref to get the latest value (avoid closure issues)
+        if (allMarkedAsReadRef.current && localUnreadCount > 0) {
+          // Force all notifications to have read_at
+          const readTimestamp = new Date().toISOString();
+          const allRead = merged.map(n => ({ ...n, read_at: n.read_at || readTimestamp }));
+          setUnreadCount(0);
+          return allRead;
+        }
+        // Otherwise use local calculation
+        setUnreadCount(localUnreadCount);
+        // Update flag based on local count
+        if (localUnreadCount === 0) {
+          setAllMarkedAsRead(true);
+        } else {
+          setAllMarkedAsRead(false);
+        }
+        return merged;
+      });
     } catch (error) {
       // If endpoint doesn't exist (404), silently fail
       if (error.response?.status === 404) {
         console.warn('Notifications endpoint not implemented in backend');
         setNotifications([]);
+        setUnreadCount(0);
       } else {
         console.error('Failed to fetch notifications:', error);
         setNotifications([]);
+        setUnreadCount(0);
       }
     } finally {
       setLoading(false);
@@ -90,7 +167,9 @@ export default function NotificationBell() {
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
+    // Fetch both notifications and unread count when opening
     fetchNotifications();
+    fetchUnreadCount();
   };
 
   const handleClose = () => {
@@ -100,10 +179,17 @@ export default function NotificationBell() {
   const handleMarkAsRead = async (id) => {
     try {
       await notificationsService.markAsRead(id);
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update local state immediately for better UX
+      const readTimestamp = new Date().toISOString();
+      setNotifications(prev => {
+        const updated = prev.map(n => n.id === id ? { ...n, read_at: readTimestamp } : n);
+        // Recalculate unread count from updated notifications
+        const unreadCount = updated.filter(n => !n.read_at).length;
+        setUnreadCount(unreadCount);
+        return updated;
+      });
+      // Also refresh from server to ensure consistency
+      await fetchUnreadCount();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -111,13 +197,41 @@ export default function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsService.markAllAsRead();
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read_at: new Date().toISOString() }))
-      );
+      // Set flag to indicate all notifications are marked as read
+      setAllMarkedAsRead(true);
+      
+      const response = await notificationsService.markAllAsRead();
+      // Update local state immediately for better UX
+      const readTimestamp = new Date().toISOString();
+      setNotifications(prev => {
+        const updated = prev.map(n => ({ ...n, read_at: n.read_at || readTimestamp }));
+        // Ensure unread count is 0 after marking all as read
+        setUnreadCount(0);
+        return updated;
+      });
+      // Use unread_count from API response if available (Laravel returns it)
+      if (response.data?.unread_count !== undefined) {
+        setUnreadCount(response.data.unread_count);
+      } else {
+        setUnreadCount(0);
+      }
+      // Refresh notifications from server, but preserve read_at for all notifications
+      // fetchNotifications will use allMarkedAsRead flag to ensure count stays 0
+      await fetchNotifications();
+      // Double check: force unread count to 0 after marking all as read
       setUnreadCount(0);
+      // Also refresh unread count to ensure consistency
+      await fetchUnreadCount();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+      // Still update UI optimistically if API call fails
+      const readTimestamp = new Date().toISOString();
+      setNotifications(prev => {
+        const updated = prev.map(n => ({ ...n, read_at: n.read_at || readTimestamp }));
+        setUnreadCount(0);
+        return updated;
+      });
+      setAllMarkedAsRead(true);
     }
   };
 

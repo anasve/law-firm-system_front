@@ -3,7 +3,17 @@ import { api } from './api';
 export const appointmentsService = {
   // Get available slots
   getAvailableSlots: (lawyerId, date) => {
-    return api.get(`/lawyers/${lawyerId}/available-slots`, { params: { date } });
+    // Ensure date is in YYYY-MM-DD format
+    const formattedDate = date ? date.split('T')[0] : date;
+    console.log('appointmentsService.getAvailableSlots - Lawyer ID:', lawyerId, 'Date:', formattedDate);
+    
+    const url = `/lawyers/${lawyerId}/available-slots`;
+    const params = { date: formattedDate };
+    
+    console.log('Request URL:', url);
+    console.log('Request params:', params);
+    
+    return api.get(url, { params });
   },
 
   // Get all appointments

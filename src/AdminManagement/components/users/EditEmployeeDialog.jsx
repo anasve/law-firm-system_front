@@ -37,6 +37,18 @@ const inputFieldStyles = {
   '& .MuiSvgIcon-root': {
     color: '#C4A484',
   },
+  // Hide number input spinners
+  '& input[type=number]': {
+    MozAppearance: 'textfield',
+    '&::-webkit-outer-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
+    '&::-webkit-inner-spin-button': {
+      WebkitAppearance: 'none',
+      margin: 0,
+    },
+  },
 };
 
 export default function EditEmployeeDialog({ open, onClose, employee, onSave }) {
@@ -147,6 +159,7 @@ export default function EditEmployeeDialog({ open, onClose, employee, onSave }) 
           autoComplete="off"
           sx={inputFieldStyles}
           InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
+          inputProps={{ min: 18, max: 100 }}
         />
         <TextField
           name="password"

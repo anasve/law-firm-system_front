@@ -8,13 +8,13 @@ export const consultationsService = {
   completeConsultation: (id, data) => api.post(`/consultations/${id}/complete`, data),
   sendMessage: (consultationId, data) => {
     const formData = new FormData();
-    formData.append('message', data.message);
+    if (data.message) {
+      formData.append('message', data.message);
+    }
     if (data.attachment) {
       formData.append('attachment', data.attachment);
     }
-    return api.post(`/consultations/${consultationId}/messages`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post(`/consultations/${consultationId}/messages`, formData);
   },
   getMessages: (consultationId) => api.get(`/consultations/${consultationId}/messages`),
 };

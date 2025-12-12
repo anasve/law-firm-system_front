@@ -3,13 +3,17 @@ import axios from "axios";
 // Use separate token key for Employee to avoid conflicts with other roles
 const EMPLOYEE_TOKEN_KEY = "employeeToken";
 
+// Use environment variable or default to Laravel API URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
 export const api = axios.create({
-  baseURL: import.meta.env.DEV ? "/api/employee" : "http://127.0.0.1:8000/api/employee",
+  baseURL: `${API_BASE_URL}/employee`,
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 10000, // 10 seconds
 });
 
 api.interceptors.request.use(

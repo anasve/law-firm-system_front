@@ -38,6 +38,7 @@ import {
   VideoCall as VideoCallIcon,
   Business as BusinessIcon,
   Phone as PhoneIcon,
+  EventRepeat as RescheduleIcon,
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -89,9 +90,14 @@ export default function AppointmentsPage() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     date: '',
@@ -123,11 +129,18 @@ export default function AppointmentsPage() {
       setAppointments(data);
       setFilteredAppointments(data);
     } catch (error) {
-      console.error('Failed to fetch appointments:', error);
+      // Handle different error statuses
       if (error.response?.status === 401) {
         setError('Session expired. Please login again.');
         navigate('/login');
+      } else if (error.response?.status === 404) {
+        // Endpoint not implemented in backend - handle gracefully
+        setAppointments([]);
+        setFilteredAppointments([]);
+        setError('Appointments feature is not available yet. Please contact support.');
       } else {
+        // Only log non-404 errors
+        console.error('Failed to fetch appointments:', error);
         const errorMessage = error.response?.data?.message || 
                             error.message || 
                             'Failed to load appointments. Please try again.';
@@ -205,6 +218,74 @@ export default function AppointmentsPage() {
       setError(error.response?.data?.message || 'Failed to cancel appointment');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleReschedule = async () => {
+    if (!selectedAppointment || !selectedSlot) {
+      setError('Please select a new time slot');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setError('');
+      await appointmentsService.rescheduleAppointment(selectedAppointment.id, selectedSlot.id);
+      setSuccess('Appointment rescheduled successfully. It will be confirmed by an employee shortly.');
+      setRescheduleDialogOpen(false);
+      setSelectedSlot(null);
+      setAvailableSlots([]);
+      await fetchAppointments();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to reschedule appointment');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const fetchAvailableSlotsForReschedule = async (lawyerId, date) => {
+    if (!lawyerId || !date) return;
+    
+    try {
+      setSlotsLoading(true);
+      setError('');
+      const formattedDate = date.split('T')[0];
+      const response = await appointmentsService.getAvailableSlots(lawyerId, formattedDate);
+      
+      // Handle different response formats
+      let slotsData = [];
+      if (Array.isArray(response.data)) {
+        slotsData = response.data;
+      } else if (response.data?.available_slots && Array.isArray(response.data.available_slots)) {
+        slotsData = response.data.available_slots;
+      } else if (response.data?.slots && Array.isArray(response.data.slots)) {
+        slotsData = response.data.slots;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        slotsData = response.data.data;
+      }
+      
+      setAvailableSlots(slotsData);
+    } catch (error) {
+      console.error('Failed to fetch available slots:', error);
+      setAvailableSlots([]);
+      setError('Failed to load available time slots. Please try another date.');
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
+  const handleOpenReschedule = async (appointment) => {
+    setSelectedAppointment(appointment);
+    setRescheduleDialogOpen(true);
+    setAvailableSlots([]);
+    setSelectedSlot(null);
+    
+    // Fetch available slots for the lawyer
+    if (appointment.lawyer?.id) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      await fetchAvailableSlotsForReschedule(appointment.lawyer.id, tomorrow.toISOString().split('T')[0]);
     }
   };
 
@@ -480,20 +561,33 @@ export default function AppointmentsPage() {
                       >
                         View Details
                       </Button>
-                      {appointment.status !== 'cancelled' && appointment.status !== 'done' && (
-                        <Tooltip title="Cancel Appointment">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setCancelDialogOpen(true);
-                            }}
-                            sx={{ color: colors.error }}
-                          >
-                            <CancelIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {appointment.status !== 'cancelled' && appointment.status !== 'done' && appointment.status === 'pending' && (
+                          <Tooltip title="Reschedule Appointment">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenReschedule(appointment)}
+                              sx={{ color: colors.gold }}
+                            >
+                              <RescheduleIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {appointment.status !== 'cancelled' && appointment.status !== 'done' && (
+                          <Tooltip title="Cancel Appointment">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setSelectedAppointment(appointment);
+                                setCancelDialogOpen(true);
+                              }}
+                              sx={{ color: colors.error }}
+                            >
+                              <CancelIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
                     </CardActions>
                   </Card>
                 </Grid>
@@ -536,7 +630,7 @@ export default function AppointmentsPage() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
             Appointment Details
           </Typography>
           <IconButton onClick={() => setDetailsDialogOpen(false)} sx={{ color: colors.white }}>
@@ -684,6 +778,135 @@ export default function AppointmentsPage() {
             disabled={actionLoading}
           >
             {actionLoading ? <CircularProgress size={24} sx={{ color: colors.black }} /> : 'Confirm Cancellation'}
+          </StyledButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog
+        open={rescheduleDialogOpen}
+        onClose={() => {
+          setRescheduleDialogOpen(false);
+          setSelectedSlot(null);
+          setAvailableSlots([]);
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.lightBlack,
+            color: colors.white,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
+            Reschedule Appointment
+          </Typography>
+          <IconButton onClick={() => {
+            setRescheduleDialogOpen(false);
+            setSelectedSlot(null);
+            setAvailableSlots([]);
+          }} sx={{ color: colors.white }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedAppointment && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Select a new date and time slot for your appointment with {selectedAppointment.lawyer?.name || 'the lawyer'}.
+              </Alert>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
+                    Select Date
+                  </Typography>
+                  <StyledTextField
+                    fullWidth
+                    type="date"
+                    value={selectedDate || ''}
+                    onChange={async (e) => {
+                      const date = e.target.value;
+                      setSelectedDate(date);
+                      if (selectedAppointment.lawyer?.id && date) {
+                        await fetchAvailableSlotsForReschedule(selectedAppointment.lawyer.id, date);
+                      }
+                    }}
+                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
+                    Available Time Slots
+                  </Typography>
+                  {slotsLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                      <CircularProgress sx={{ color: colors.gold }} />
+                    </Box>
+                  ) : Array.isArray(availableSlots) && availableSlots.length > 0 ? (
+                    <Grid container spacing={2}>
+                      {availableSlots.map((slot) => (
+                        <Grid item xs={6} sm={4} md={3} key={slot.id}>
+                          <Card
+                            onClick={() => setSelectedSlot(slot)}
+                            sx={{
+                              cursor: 'pointer',
+                              backgroundColor: selectedSlot?.id === slot.id ? alpha(colors.gold, 0.2) : colors.black,
+                              border: selectedSlot?.id === slot.id ? `2px solid ${colors.gold}` : `1px solid ${alpha(colors.gold, 0.2)}`,
+                              '&:hover': {
+                                backgroundColor: alpha(colors.gold, 0.1),
+                                borderColor: colors.gold,
+                              },
+                            }}
+                          >
+                            <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                              <TimeIcon sx={{ color: selectedSlot?.id === slot.id ? colors.gold : alpha(colors.gold, 0.7), mb: 1 }} />
+                              <Typography variant="body1" fontWeight="bold" sx={{ color: colors.white }}>
+                                {slot.start_time || slot.time || slot.start || 'N/A'}
+                              </Typography>
+                              {slot.end_time && (
+                                <Typography variant="caption" sx={{ color: colors.textSecondary, display: 'block' }}>
+                                  - {slot.end_time}
+                                </Typography>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : selectedDate ? (
+                    <Alert severity="warning">
+                      No available time slots for this date. Please try another date.
+                    </Alert>
+                  ) : (
+                    <Alert severity="info">
+                      Please select a date to view available time slots.
+                    </Alert>
+                  )}
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => {
+              setRescheduleDialogOpen(false);
+              setSelectedSlot(null);
+              setAvailableSlots([]);
+            }}
+            sx={{ color: colors.textSecondary }}
+          >
+            Cancel
+          </Button>
+          <StyledButton
+            onClick={handleReschedule}
+            disabled={actionLoading || !selectedSlot}
+          >
+            {actionLoading ? <CircularProgress size={24} sx={{ color: colors.black }} /> : 'Reschedule Appointment'}
           </StyledButton>
         </DialogActions>
       </Dialog>

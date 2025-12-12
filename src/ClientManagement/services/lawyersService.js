@@ -2,13 +2,17 @@ import { api } from './api';
 import axios from 'axios';
 
 // Guest API instance for public endpoints
+// Use environment variable or default to Laravel API URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
 const guestApi = axios.create({
-  baseURL: import.meta.env.DEV ? "/api/guest" : "http://127.0.0.1:8000/api/guest",
+  baseURL: `${API_BASE_URL}/guest`,
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 10000, // 10 seconds
 });
 
 export const lawyersService = {
@@ -19,15 +23,18 @@ export const lawyersService = {
       const response = await guestApi.get('/lawyers', { params });
       return response;
     } catch (error) {
-      console.error('Failed to fetch lawyers from guest endpoint:', error);
-      // If guest endpoint fails, try client endpoint with auth
-      try {
-        const response = await api.get('/lawyers', { params });
-        return response;
-      } catch (clientError) {
-        console.error('Failed to fetch lawyers from client endpoint:', clientError);
-        throw clientError;
+      // If 404, endpoint not implemented - try client endpoint with auth
+      if (error.response?.status === 404) {
+        try {
+          const response = await api.get('/lawyers', { params });
+          return response;
+        } catch (clientError) {
+          // If client endpoint also fails, throw the original error
+          throw clientError;
+        }
       }
+      // For other errors, throw immediately
+      throw error;
     }
   },
 
@@ -37,14 +44,18 @@ export const lawyersService = {
       const response = await guestApi.get(`/lawyers/${id}`);
       return response;
     } catch (error) {
-      console.error('Failed to fetch lawyer from guest endpoint:', error);
-      try {
-        const response = await api.get(`/lawyers/${id}`);
-        return response;
-      } catch (clientError) {
-        console.error('Failed to fetch lawyer from client endpoint:', clientError);
-        throw clientError;
+      // If 404, endpoint not implemented - try client endpoint with auth
+      if (error.response?.status === 404) {
+        try {
+          const response = await api.get(`/lawyers/${id}`);
+          return response;
+        } catch (clientError) {
+          // If client endpoint also fails, throw the original error
+          throw clientError;
+        }
       }
+      // For other errors, throw immediately
+      throw error;
     }
   },
 };

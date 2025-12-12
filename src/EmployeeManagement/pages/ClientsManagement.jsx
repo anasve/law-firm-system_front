@@ -408,7 +408,7 @@ export default function ClientsManagement() {
         <Grid container spacing={3}>
           {Array.isArray(filteredClients) && filteredClients.length > 0 ? (
             filteredClients.map((client) => (
-              <Grid item xs={12} md={6} lg={4} key={client.id}>
+              <Grid item xs={12} md={6} key={client.id}>
                 <Card
                   sx={{
                     backgroundColor: colors.lightBlack,
@@ -626,7 +626,7 @@ export default function ClientsManagement() {
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
             تفاصيل العميل
           </Typography>
           <IconButton onClick={() => setDetailsDialogOpen(false)} sx={{ color: colors.white }}>

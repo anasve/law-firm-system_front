@@ -12,7 +12,6 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import PeopleIcon from '@mui/icons-material/People';
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import EventIcon from '@mui/icons-material/Event';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -51,7 +50,6 @@ const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
 const menuItems = [
   { text: 'Dashboard', icon: <PieChartIcon />, path: '/employee/dashboard' },
   { text: 'Clients', icon: <PeopleIcon />, path: '/employee/clients' },
-  { text: 'Consultations', icon: <QuestionAnswerIcon />, path: '/employee/consultations' },
   { text: 'Availability', icon: <ScheduleIcon />, path: '/employee/availability' },
   { text: 'Appointments', icon: <EventIcon />, path: '/employee/appointments' },
   { text: 'Profile', icon: <AccountCircleIcon />, path: '/employee/profile' },
