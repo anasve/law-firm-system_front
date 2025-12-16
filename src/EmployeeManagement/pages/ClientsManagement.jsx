@@ -36,7 +36,10 @@ import {
   Email as EmailIcon,
   CalendarToday as CalendarTodayIcon,
   Close as CloseIcon,
+  Phone as PhoneIcon,
+  LocationOn as LocationIcon,
 } from '@mui/icons-material';
+import { Avatar } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { WelcomeBanner, StyledButton, StyledTextField } from '../../AdminManagement/components/StyledComponents';
 import { colors } from '../../AdminManagement/constants';
@@ -87,6 +90,7 @@ export default function ClientsManagement() {
   }, [tab]);
 
   useEffect(() => {
+    console.log('[Filter] Applying filters, clients count:', clients.length, 'searchTerm:', searchTerm);
     applyFilters();
   }, [clients, searchTerm]);
 
@@ -114,10 +118,54 @@ export default function ClientsManagement() {
         default:
           response = await clientsService.getClients();
       }
-      setClients(Array.isArray(response.data) ? response.data : []);
+      
+      // Handle different response formats
+      let data = [];
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response.data?.clients && Array.isArray(response.data.clients)) {
+        data = response.data.clients;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        data = response.data.items;
+      }
+      
+      console.log(`[Tab ${tab}] Full response:`, response);
+      console.log(`[Tab ${tab}] Response data:`, response.data);
+      console.log(`[Tab ${tab}] Fetched ${data.length} clients:`, data);
+      
+      // If no data found and it's pending tab, try alternative endpoint
+      if (tab === 1 && data.length === 0) {
+        console.log('[Tab 1] No data from pending-verified, trying with status filter...');
+        try {
+          const altResponse = await clientsService.getClients({ status: 'pending' });
+          let altData = [];
+          if (Array.isArray(altResponse.data)) {
+            altData = altResponse.data;
+          } else if (altResponse.data?.data && Array.isArray(altResponse.data.data)) {
+            altData = altResponse.data.data;
+          } else if (altResponse.data?.clients && Array.isArray(altResponse.data.clients)) {
+            altData = altResponse.data.clients;
+          }
+          if (altData.length > 0) {
+            console.log('[Tab 1] Found clients using status filter:', altData);
+            data = altData;
+          }
+        } catch (altError) {
+          console.warn('[Tab 1] Alternative fetch failed:', altError);
+        }
+      }
+      
+      setClients(data);
     } catch (error) {
       console.error('Failed to fetch clients:', error);
-      setError('فشل تحميل العملاء. يرجى المحاولة مرة أخرى.');
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'فشل تحميل العملاء. يرجى المحاولة مرة أخرى.';
+      setError(errorMessage);
       setClients([]);
     } finally {
       setLoading(false);
@@ -126,6 +174,7 @@ export default function ClientsManagement() {
 
   const applyFilters = () => {
     let filtered = [...clients];
+    console.log('[Filter] Starting with', filtered.length, 'clients');
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -134,8 +183,10 @@ export default function ClientsManagement() {
           client.name?.toLowerCase().includes(searchLower) ||
           client.email?.toLowerCase().includes(searchLower)
       );
+      console.log('[Filter] After search filter:', filtered.length, 'clients');
     }
 
+    console.log('[Filter] Final filtered clients:', filtered.length);
     setFilteredClients(filtered);
   };
 
@@ -424,8 +475,18 @@ export default function ClientsManagement() {
                 >
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PersonIcon sx={{ color: colors.gold, fontSize: 32 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        {client.image ? (
+                          <Avatar 
+                            src={client.image} 
+                            alt={client.name}
+                            sx={{ width: 56, height: 56, border: `2px solid ${colors.gold}` }}
+                          />
+                        ) : (
+                          <Avatar sx={{ bgcolor: colors.gold, width: 56, height: 56 }}>
+                            <PersonIcon sx={{ color: colors.black, fontSize: 32 }} />
+                          </Avatar>
+                        )}
                         <Box>
                           <Typography variant="h6" fontWeight="bold">
                             {client.name}
@@ -434,6 +495,18 @@ export default function ClientsManagement() {
                             <EmailIcon sx={{ fontSize: 14 }} />
                             {client.email}
                           </Typography>
+                          {client.phone && (
+                            <Typography variant="body2" sx={{ color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                              <PhoneIcon sx={{ fontSize: 14 }} />
+                              {client.phone}
+                            </Typography>
+                          )}
+                          {client.address && (
+                            <Typography variant="body2" sx={{ color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                              <LocationIcon sx={{ fontSize: 14 }} />
+                              {client.address}
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                       <IconButton
@@ -636,6 +709,22 @@ export default function ClientsManagement() {
         <DialogContent>
           {selectedClient && (
             <Box>
+              <Box sx={{ mb: 3, textAlign: 'center' }}>
+                {selectedClient.image ? (
+                  <Avatar 
+                    src={selectedClient.image} 
+                    alt={selectedClient.name}
+                    sx={{ width: 120, height: 120, mx: 'auto', mb: 2, border: `3px solid ${colors.gold}` }}
+                  />
+                ) : (
+                  <Avatar sx={{ bgcolor: colors.gold, width: 120, height: 120, mx: 'auto', mb: 2 }}>
+                    <PersonIcon sx={{ color: colors.black, fontSize: 60 }} />
+                  </Avatar>
+                )}
+                <Typography variant="h5" fontWeight="bold" sx={{ color: colors.white, mb: 0.5 }}>
+                  {selectedClient.name}
+                </Typography>
+              </Box>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
@@ -653,6 +742,28 @@ export default function ClientsManagement() {
                     {selectedClient.email}
                   </Typography>
                 </Grid>
+                {selectedClient.phone && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <PhoneIcon sx={{ fontSize: 16 }} />
+                      رقم الهاتف
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
+                      {selectedClient.phone}
+                    </Typography>
+                  </Grid>
+                )}
+                {selectedClient.address && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <LocationIcon sx={{ fontSize: 16 }} />
+                      العنوان
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
+                      {selectedClient.address}
+                    </Typography>
+                  </Grid>
+                )}
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
                     الحالة

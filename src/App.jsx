@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layouts
 import AdminLayout from "./AdminManagement/layouts/AdminLayout";
@@ -24,6 +24,7 @@ import {
   ClientDashboardHome,
   ConsultationsPage as ClientConsultationsPage,
   AppointmentsPage as ClientAppointmentsPage,
+  ChatPage as ClientChatPage,
   ProfilePage as ClientProfilePage,
   NewConsultationPage,
   NewAppointmentPage,
@@ -35,6 +36,7 @@ import {
   LawyerDashboardHome,
   ConsultationsPage as LawyerConsultationsPage,
   AppointmentsPage as LawyerAppointmentsPage,
+  ChatPage as LawyerChatPage,
   ProfilePage as LawyerProfilePage,
 } from "./LawyerManagement/pages";
 
@@ -43,7 +45,6 @@ import LoginEmployee from "./EmployeeManagement/LoginEmployee";
 import {
   EmployeeDashboardHome,
   ClientsManagement,
-  AvailabilityManagement,
   AppointmentsManagement,
   ProfilePage as EmployeeProfilePage,
 } from "./EmployeeManagement/pages";
@@ -72,29 +73,33 @@ function App() {
 
         {/* Client Routes */}
         <Route element={<ClientLayout />}>
+          <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client/dashboard" element={<ClientDashboardHome />} />
           <Route path="/client/consultations" element={<ClientConsultationsPage />} />
           <Route path="/client/consultations/new" element={<NewConsultationPage />} />
           <Route path="/client/appointments" element={<ClientAppointmentsPage />} />
           <Route path="/client/appointments/new" element={<NewAppointmentPage />} />
+          <Route path="/client/chat" element={<ClientChatPage />} />
           <Route path="/client/profile" element={<ClientProfilePage />} />
         </Route>
 
         {/* Lawyer Routes */}
         <Route path="/lawyer/login" element={<LoginLawyer />} />
+        <Route path="/lawyer" element={<Navigate to="/lawyer/dashboard" replace />} />
         <Route element={<LawyerLayout />}>
           <Route path="/lawyer/dashboard" element={<LawyerDashboardHome />} />
           <Route path="/lawyer/consultations" element={<LawyerConsultationsPage />} />
           <Route path="/lawyer/appointments" element={<LawyerAppointmentsPage />} />
+          <Route path="/lawyer/chat" element={<LawyerChatPage />} />
           <Route path="/lawyer/profile" element={<LawyerProfilePage />} />
         </Route>
 
         {/* Employee Routes */}
         <Route path="/employee/login" element={<LoginEmployee />} />
+        <Route path="/employee" element={<Navigate to="/employee/dashboard" replace />} />
         <Route element={<EmployeeLayout />}>
           <Route path="/employee/dashboard" element={<EmployeeDashboardHome />} />
           <Route path="/employee/clients" element={<ClientsManagement />} />
-          <Route path="/employee/availability" element={<AvailabilityManagement />} />
           <Route path="/employee/appointments" element={<AppointmentsManagement />} />
           <Route path="/employee/profile" element={<EmployeeProfilePage />} />
         </Route>

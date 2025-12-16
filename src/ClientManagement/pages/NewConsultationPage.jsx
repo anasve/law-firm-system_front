@@ -118,7 +118,6 @@ export default function NewConsultationPage() {
     description: '',
     priority: 'normal',
     preferred_channel: 'chat',
-    appointment_availability_id: '',
     appointment_type: 'online',
     appointment_meeting_link: '',
     appointment_notes: '',
@@ -282,14 +281,6 @@ export default function NewConsultationPage() {
 
       // Only add appointment fields if preferred_channel is 'appointment'
       if (formData.preferred_channel === 'appointment') {
-        if (formData.appointment_availability_id) {
-          const availId = typeof formData.appointment_availability_id === 'string' 
-            ? parseInt(formData.appointment_availability_id) 
-            : Number(formData.appointment_availability_id);
-          if (!isNaN(availId) && availId > 0) {
-            data.appointment_availability_id = availId;
-          }
-        }
         if (formData.appointment_type) {
           data.appointment_type = formData.appointment_type;
         }
@@ -507,24 +498,65 @@ export default function NewConsultationPage() {
 
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: colors.textSecondary }}>Priority</InputLabel>
+                  <InputLabel 
+                    sx={{ 
+                      color: alpha(colors.white, 0.9),
+                      fontWeight: 500,
+                      '&.Mui-focused': {
+                        color: colors.gold,
+                      },
+                    }}
+                  >
+                    Priority
+                  </InputLabel>
                   <Select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                     sx={{
                       color: colors.white,
+                      backgroundColor: 'rgba(0,0,0,0.2)',
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: alpha(colors.gold, 0.3),
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: alpha(colors.gold, 0.7),
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: colors.gold,
+                      },
+                      '& .MuiSvgIcon-root': {
+                        color: colors.white,
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: colors.lightBlack,
+                          color: colors.white,
+                          border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                          '& .MuiMenuItem-root': {
+                            color: colors.white,
+                            '&:hover': {
+                              backgroundColor: alpha(colors.gold, 0.2),
+                            },
+                            '&.Mui-selected': {
+                              backgroundColor: alpha(colors.gold, 0.3),
+                              '&:hover': {
+                                backgroundColor: alpha(colors.gold, 0.4),
+                              },
+                            },
+                          },
+                        },
                       },
                     }}
                   >
                     <MenuItem value="normal">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
                         Normal
                       </Box>
                     </MenuItem>
                     <MenuItem value="urgent">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
                         <PriorityHighIcon sx={{ fontSize: 18, color: colors.error }} />
                         Urgent
                       </Box>
@@ -535,38 +567,79 @@ export default function NewConsultationPage() {
 
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
-                  <InputLabel sx={{ color: colors.textSecondary }}>Preferred Channel</InputLabel>
+                  <InputLabel 
+                    sx={{ 
+                      color: alpha(colors.white, 0.9),
+                      fontWeight: 500,
+                      '&.Mui-focused': {
+                        color: colors.gold,
+                      },
+                    }}
+                  >
+                    Preferred Channel
+                  </InputLabel>
                   <Select
                     value={formData.preferred_channel}
                     onChange={(e) => setFormData({ ...formData, preferred_channel: e.target.value })}
                     sx={{
                       color: colors.white,
+                      backgroundColor: 'rgba(0,0,0,0.2)',
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: alpha(colors.gold, 0.3),
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: alpha(colors.gold, 0.7),
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: colors.gold,
+                      },
+                      '& .MuiSvgIcon-root': {
+                        color: colors.white,
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          backgroundColor: colors.lightBlack,
+                          color: colors.white,
+                          border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                          '& .MuiMenuItem-root': {
+                            color: colors.white,
+                            '&:hover': {
+                              backgroundColor: alpha(colors.gold, 0.2),
+                            },
+                            '&.Mui-selected': {
+                              backgroundColor: alpha(colors.gold, 0.3),
+                              '&:hover': {
+                                backgroundColor: alpha(colors.gold, 0.4),
+                              },
+                            },
+                          },
+                        },
                       },
                     }}
                   >
                     <MenuItem value="chat">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ChatIcon sx={{ fontSize: 18 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
+                        <ChatIcon sx={{ fontSize: 18, color: colors.gold }} />
                         Chat
                       </Box>
                     </MenuItem>
                     <MenuItem value="in_office">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BusinessIcon sx={{ fontSize: 18 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
+                        <BusinessIcon sx={{ fontSize: 18, color: colors.gold }} />
                         In Office
                       </Box>
                     </MenuItem>
                     <MenuItem value="call">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PhoneIcon sx={{ fontSize: 18 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
+                        <PhoneIcon sx={{ fontSize: 18, color: colors.gold }} />
                         Call
                       </Box>
                     </MenuItem>
                     <MenuItem value="appointment">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EventIcon sx={{ fontSize: 18 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
+                        <EventIcon sx={{ fontSize: 18, color: colors.gold }} />
                         Appointment
                       </Box>
                     </MenuItem>
@@ -676,7 +749,17 @@ export default function NewConsultationPage() {
               {selectionMode === 'specialization' && (
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel sx={{ color: colors.textSecondary }}>Select Specialization</InputLabel>
+                    <InputLabel 
+                      sx={{ 
+                        color: alpha(colors.white, 0.9),
+                        fontWeight: 500,
+                        '&.Mui-focused': {
+                          color: colors.gold,
+                        },
+                      }}
+                    >
+                      Select Specialization
+                    </InputLabel>
                     <Select
                       value={formData.specialization_id}
                       onChange={(e) => {
@@ -685,15 +768,48 @@ export default function NewConsultationPage() {
                       }}
                       sx={{
                         color: colors.white,
+                        backgroundColor: 'rgba(0,0,0,0.2)',
                         '& .MuiOutlinedInput-notchedOutline': {
                           borderColor: alpha(colors.gold, 0.3),
                         },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: alpha(colors.gold, 0.7),
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: colors.gold,
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: colors.white,
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            backgroundColor: colors.lightBlack,
+                            color: colors.white,
+                            border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                            '& .MuiMenuItem-root': {
+                              color: colors.white,
+                              '&:hover': {
+                                backgroundColor: alpha(colors.gold, 0.2),
+                              },
+                              '&.Mui-selected': {
+                                backgroundColor: alpha(colors.gold, 0.3),
+                                '&:hover': {
+                                  backgroundColor: alpha(colors.gold, 0.4),
+                                },
+                              },
+                            },
+                          },
+                        },
                       }}
                     >
-                      <MenuItem value="">Select Specialization</MenuItem>
+                      <MenuItem value="">
+                        <Box sx={{ color: alpha(colors.white, 0.7) }}>Select Specialization</Box>
+                      </MenuItem>
                       {Array.isArray(specializations) && specializations.map((spec) => (
                         <MenuItem key={spec.id} value={spec.id}>
-                          {spec.name}
+                          <Box sx={{ color: colors.white }}>{spec.name}</Box>
                         </MenuItem>
                       ))}
                     </Select>
@@ -911,20 +1027,67 @@ export default function NewConsultationPage() {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth>
-                      <InputLabel sx={{ color: colors.textSecondary }}>Appointment Type</InputLabel>
+                      <InputLabel 
+                        sx={{ 
+                          color: alpha(colors.white, 0.9),
+                          fontWeight: 500,
+                          '&.Mui-focused': {
+                            color: colors.gold,
+                          },
+                        }}
+                      >
+                        Appointment Type
+                      </InputLabel>
                       <Select
                         value={formData.appointment_type}
                         onChange={(e) => setFormData({ ...formData, appointment_type: e.target.value })}
                         sx={{
                           color: colors.white,
+                          backgroundColor: 'rgba(0,0,0,0.2)',
                           '& .MuiOutlinedInput-notchedOutline': {
                             borderColor: alpha(colors.gold, 0.3),
                           },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: alpha(colors.gold, 0.7),
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: colors.gold,
+                          },
+                          '& .MuiSvgIcon-root': {
+                            color: colors.white,
+                          },
+                        }}
+                        MenuProps={{
+                          PaperProps: {
+                            sx: {
+                              backgroundColor: colors.lightBlack,
+                              color: colors.white,
+                              border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                              '& .MuiMenuItem-root': {
+                                color: colors.white,
+                                '&:hover': {
+                                  backgroundColor: alpha(colors.gold, 0.2),
+                                },
+                                '&.Mui-selected': {
+                                  backgroundColor: alpha(colors.gold, 0.3),
+                                  '&:hover': {
+                                    backgroundColor: alpha(colors.gold, 0.4),
+                                  },
+                                },
+                              },
+                            },
+                          },
                         }}
                       >
-                        <MenuItem value="online">Online</MenuItem>
-                        <MenuItem value="in_office">In Office</MenuItem>
-                        <MenuItem value="phone">Phone</MenuItem>
+                        <MenuItem value="online">
+                          <Box sx={{ color: colors.white }}>Online</Box>
+                        </MenuItem>
+                        <MenuItem value="in_office">
+                          <Box sx={{ color: colors.white }}>In Office</Box>
+                        </MenuItem>
+                        <MenuItem value="phone">
+                          <Box sx={{ color: colors.white }}>Phone</Box>
+                        </MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>

@@ -1,18 +1,19 @@
 import { api } from './api';
 
 export const appointmentsService = {
-  // Get available slots
+  // Get available slots for a specific date
   getAvailableSlots: (lawyerId, date) => {
     // Ensure date is in YYYY-MM-DD format
     const formattedDate = date ? date.split('T')[0] : date;
-    console.log('appointmentsService.getAvailableSlots - Lawyer ID:', lawyerId, 'Date:', formattedDate);
-    
     const url = `/lawyers/${lawyerId}/available-slots`;
     const params = { date: formattedDate };
-    
-    console.log('Request URL:', url);
-    console.log('Request params:', params);
-    
+    return api.get(url, { params });
+  },
+
+  // Get calendar month view
+  getCalendarMonth: (lawyerId, year, month) => {
+    const url = `/appointments/calendar/month`;
+    const params = { year, month, lawyer_id: lawyerId };
     return api.get(url, { params });
   },
 
@@ -42,8 +43,8 @@ export const appointmentsService = {
   },
 
   // Reschedule appointment
-  rescheduleAppointment: (id, availabilityId) => {
-    return api.post(`/appointments/${id}/reschedule`, { availability_id: availabilityId });
+  rescheduleAppointment: (id, data) => {
+    return api.post(`/appointments/${id}/reschedule`, data);
   },
 };
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Alert } from '@mui/material';
+import { Box, Typography, Paper, Alert, Grid } from '@mui/material';
 import { WelcomeBanner, StyledTextField, StyledButton } from '../../AdminManagement/components/StyledComponents';
 import { colors } from '../../AdminManagement/constants';
 import { profileService } from '../services';
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState({ name: '', email: '' });
+  const [profile, setProfile] = useState({ name: '', email: '', phone: '', address: '' });
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -29,6 +29,8 @@ export default function ProfilePage() {
       setProfile({
         name: profileData.name || '',
         email: profileData.email || '',
+        phone: profileData.phone || '',
+        address: profileData.address || '',
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -75,26 +77,51 @@ export default function ProfilePage() {
           </Box>
         ) : (
           <Box component="form" onSubmit={handleSubmit}>
-            <StyledTextField
-              fullWidth
-              label="Name"
-              value={profile.name || ''}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              sx={{ mb: 3 }}
-              required
-            />
-            <StyledTextField
-              fullWidth
-              label="Email"
-              type="email"
-              value={profile.email || ''}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              sx={{ mb: 3 }}
-              required
-            />
-            <StyledButton type="submit">
-              Update Profile
-            </StyledButton>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Name"
+                  value={profile.name || ''}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  value={profile.email || ''}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Phone Number"
+                  value={profile.phone || ''}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  placeholder="+1234567890"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StyledTextField
+                  fullWidth
+                  label="Address"
+                  value={profile.address || ''}
+                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                  multiline
+                  rows={2}
+                />
+              </Grid>
+            </Grid>
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <StyledButton type="submit">
+                Update Profile
+              </StyledButton>
+            </Box>
           </Box>
         )}
       </Paper>

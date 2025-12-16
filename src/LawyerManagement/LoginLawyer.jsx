@@ -18,7 +18,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors } from '../AdminManagement/constants';
-import { setToken } from './services/api';
+import { setToken, api, API_BASE_URL_FULL } from './services/api';
 
 const StyledTextField = styled(TextField)({
   '& .MuiInputBase-root': {
@@ -126,68 +126,90 @@ export default function LoginLawyer() {
     setLoading(true);
 
     try {
-      // Get CSRF cookie first
-      await axios.get("/sanctum/csrf-cookie", {
-        withCredentials: true,
-        headers: {
-          "Accept": "application/json",
-        },
-      });
-
-      // Send login request
-      const response = await axios.post(
-        "/api/lawyer/login",
-        {
-          email: values.email.trim(),
-          password: values.password,
-        },
-        {
+      // Fetch CSRF cookie from Laravel Sanctum
+      const csrfUrl = `${API_BASE_URL_FULL}/sanctum/csrf-cookie`;
+      try {
+        await axios.get(csrfUrl, {
           withCredentials: true,
           headers: {
-            "Content-Type": "application/json",
             "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
           },
-        }
-      );
-
-      // Check if response has token
-      if (response.data?.token) {
-        setToken(response.data.token);
-        navigate("/lawyer/dashboard");
-      } else {
-        setError('Login failed. No token received.');
+        });
+      } catch (csrfError) {
+        console.warn('CSRF cookie fetch failed (may not be needed):', csrfError);
+        // Continue anyway, some APIs don't need CSRF
       }
+
+      // Login with credentials using the api instance
+      // Note: API_BASE_URL already includes '/lawyer', so we use '/login' not '/lawyer/login'
+      const response = await api.post('/login', {
+        email: values.email.trim(),
+        password: values.password,
+      });
+      
+      console.log('Login response:', response);
+
+      // Handle different response formats
+      const token = response.data?.token || 
+                   response.data?.data?.token || 
+                   response.data?.access_token;
+
+      if (!token) {
+        console.error('No token in response:', response.data);
+        setError("Login failed: No token received from server.");
+        return;
+      }
+
+      // Store token
+      setToken(token);
+
+      console.log("Login success:", response.data);
+      navigate("/lawyer/dashboard");
     } catch (err) {
       console.error('Login error:', err);
-      console.error('Error response:', err.response?.data);
+      console.error('Error response:', err.response);
       
-      // Handle validation errors (422)
-      if (err.response?.status === 422) {
-        const errors = err.response.data?.errors;
-        if (errors) {
-          // Format validation errors
-          const errorMessages = Object.entries(errors)
-            .map(([field, messages]) => {
-              const fieldName = field === 'email' ? 'Email' : field === 'password' ? 'Password' : field;
-              return `${fieldName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
-            })
-            .join('\n');
-          setError(errorMessages || 'Validation failed. Please check your input.');
+      // Better error handling
+      let errorMessage = "Login failed. Please check your credentials.";
+      
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 401 || err.response.status === 422) {
+          const errors = err.response.data?.errors;
+          if (errors) {
+            // Format validation errors
+            const errorMessages = Object.entries(errors)
+              .map(([field, messages]) => {
+                const fieldName = field === 'email' ? 'Email' : field === 'password' ? 'Password' : field;
+                return `${fieldName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+              })
+              .join('\n');
+            errorMessage = errorMessages || 'Validation failed. Please check your input.';
+          } else {
+            errorMessage = err.response.data?.message || 
+                          err.response.data?.error || 
+                          "Invalid email or password. Please try again.";
+          }
+        } else if (err.response.status === 403) {
+          errorMessage = "Access forbidden. Please check your account status.";
+        } else if (err.response.status === 404) {
+          errorMessage = "Login endpoint not found. Please check API configuration.";
+        } else if (err.response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
         } else {
-          setError(err.response.data?.message || 'Validation failed. Please check your input.');
+          errorMessage = err.response.data?.message || 
+                        err.response.data?.error || 
+                        errorMessage;
         }
-      } else if (err.response?.status === 401) {
-        setError('Invalid email or password. Please try again.');
-      } else if (err.response?.status === 403) {
-        setError('Access forbidden. Please check your account status.');
-      } else if (err.response?.status === 500) {
-        setError('Server error. Please try again later.');
-      } else if (!err.response) {
-        setError('Network error. Please check your connection and try again.');
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = "Cannot connect to server. Please check your connection.";
       } else {
-        setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials and try again.');
+        // Error in request setup
+        errorMessage = err.message || errorMessage;
       }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

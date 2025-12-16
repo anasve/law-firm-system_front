@@ -16,6 +16,7 @@ import EventIcon from '@mui/icons-material/Event';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GavelIcon from '@mui/icons-material/Gavel';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
 import { colors } from '../AdminManagement/constants';
@@ -50,6 +51,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <PieChartIcon />, path: '/lawyer/dashboard' },
   { text: 'Consultations', icon: <QuestionAnswerIcon />, path: '/lawyer/consultations' },
   { text: 'Appointments', icon: <EventIcon />, path: '/lawyer/appointments' },
+  { text: 'Chat', icon: <ChatIcon />, path: '/lawyer/chat' },
   { text: 'Profile', icon: <AccountCircleIcon />, path: '/lawyer/profile' },
 ];
 

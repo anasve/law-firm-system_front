@@ -115,6 +115,8 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
                   name: lawyer.name || '',
                   age: lawyer.age || '',
                   email: lawyer.email || '',
+                  phone: lawyer.phone || '',
+                  address: lawyer.address || '',
                   password: '',
                   password_confirmation: '',
                   specialization_ids: currentSpecIds,
@@ -133,7 +135,7 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
     } else if (!open) {
       setFullLawyerData(null);
       setFormData({
-        name: '', age: '', email: '', password: '', password_confirmation: '', specialization_ids: [], image: null, certificate: null,
+        name: '', age: '', email: '', phone: '', address: '', password: '', password_confirmation: '', specialization_ids: [], image: null, certificate: null,
       });
       setImagePreview(null);
     }
@@ -248,6 +250,27 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
               sx={inputFieldStyles}
               InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
               inputProps={{ min: 18, max: 100 }}
+            />
+            <TextField
+              name="phone"
+              label="Phone Number"
+              value={formData.phone}
+              onChange={handleChange}
+              autoComplete="off"
+              sx={inputFieldStyles}
+              InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
+              placeholder="+1234567890"
+            />
+            <TextField
+              name="address"
+              label="Address"
+              value={formData.address}
+              onChange={handleChange}
+              autoComplete="off"
+              multiline
+              rows={2}
+              sx={inputFieldStyles}
+              InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
             />
             <TextField
               name="password"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -94,6 +94,73 @@ export default function AppointmentsPage() {
     search: '',
   });
 
+  // Auto-update expired appointments to 'done'
+  const checkAndUpdateExpiredAppointments = useCallback(() => {
+    setAppointments((prevAppointments) => {
+      const now = new Date();
+      let hasUpdates = false;
+      
+      const updatedAppointments = prevAppointments.map((apt) => {
+        // Only update confirmed or pending appointments
+        if (apt.status === 'confirmed' || apt.status === 'pending') {
+          let appointmentDateTime = null;
+          
+          if (apt.datetime) {
+            // Handle both "YYYY-MM-DD HH:mm:ss" and "YYYY-MM-DDTHH:mm:ss" formats
+            appointmentDateTime = apt.datetime.replace(' ', 'T');
+          } else if (apt.preferred_date && apt.preferred_time) {
+            // Format preferred_time to ensure it has seconds if needed
+            let timeStr = apt.preferred_time.trim();
+            if (timeStr && !timeStr.includes(':')) {
+              // Invalid time format, skip
+              return apt;
+            }
+            // If time doesn't have seconds, add :00
+            if (timeStr.split(':').length === 2) {
+              timeStr = `${timeStr}:00`;
+            }
+            appointmentDateTime = `${apt.preferred_date}T${timeStr}`;
+          }
+          
+          if (appointmentDateTime) {
+            try {
+              // Normalize datetime format for Date parsing
+              let normalizedDateTime = appointmentDateTime;
+              // Replace space with T if present (handles "YYYY-MM-DD HH:mm:ss" format)
+              if (normalizedDateTime.includes(' ') && !normalizedDateTime.includes('T')) {
+                normalizedDateTime = normalizedDateTime.replace(' ', 'T');
+              }
+              
+              const aptDate = new Date(normalizedDateTime);
+              
+              // Check if date is valid
+              if (!isNaN(aptDate.getTime())) {
+                // If appointment time has passed, mark as done
+                if (aptDate < now) {
+                  console.log(`[Lawyer Auto-update] Marking appointment ${apt.id} as done. Time: ${aptDate.toISOString()}, Now: ${now.toISOString()}`);
+                  hasUpdates = true;
+                  return { ...apt, status: 'done' };
+                }
+              } else {
+                console.warn('[Lawyer Auto-update] Invalid date parsed:', normalizedDateTime, 'for appointment:', apt.id);
+              }
+            } catch (e) {
+              // Invalid date format, skip
+              console.warn('[Lawyer Auto-update] Invalid appointment date format:', appointmentDateTime, 'Error:', e);
+            }
+          }
+        }
+        return apt;
+      });
+      
+      if (hasUpdates) {
+        console.log('[Lawyer Auto-update] Updated', updatedAppointments.filter(apt => apt.status === 'done').length, 'appointments to done');
+      }
+      
+      return hasUpdates ? updatedAppointments : prevAppointments;
+    });
+  }, []);
+
   useEffect(() => {
     fetchAppointments();
     // Auto-refresh every 30 seconds
@@ -102,6 +169,19 @@ export default function AppointmentsPage() {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Check for expired appointments every minute
+  useEffect(() => {
+    // Check immediately
+    checkAndUpdateExpiredAppointments();
+    
+    // Then check every minute
+    const expiredCheckInterval = setInterval(() => {
+      checkAndUpdateExpiredAppointments();
+    }, 60000); // 1 minute
+    
+    return () => clearInterval(expiredCheckInterval);
+  }, [checkAndUpdateExpiredAppointments]);
 
   useEffect(() => {
     applyFilters();
@@ -118,10 +198,64 @@ export default function AppointmentsPage() {
       setLoading(true);
       setError('');
       const response = await appointmentsService.getAppointments();
-      const data = Array.isArray(response.data) 
+      let data = Array.isArray(response.data) 
         ? response.data 
         : (response.data?.data || response.data?.appointments || []);
-      setAppointments(data);
+      
+      // Auto-update expired appointments to 'done'
+      const updatedData = data.map((apt) => {
+        if (apt.status === 'confirmed' || apt.status === 'pending') {
+          let appointmentDateTime = null;
+          
+          if (apt.datetime) {
+            // Handle both "YYYY-MM-DD HH:mm:ss" and "YYYY-MM-DDTHH:mm:ss" formats
+            appointmentDateTime = apt.datetime.replace(' ', 'T');
+          } else if (apt.preferred_date && apt.preferred_time) {
+            // Format preferred_time to ensure it has seconds if needed
+            let timeStr = apt.preferred_time.trim();
+            if (timeStr && !timeStr.includes(':')) {
+              // Invalid time format, skip
+              return apt;
+            }
+            // If time doesn't have seconds, add :00
+            if (timeStr.split(':').length === 2) {
+              timeStr = `${timeStr}:00`;
+            }
+            appointmentDateTime = `${apt.preferred_date}T${timeStr}`;
+          }
+          
+          if (appointmentDateTime) {
+            try {
+              // Normalize datetime format for Date parsing
+              let normalizedDateTime = appointmentDateTime;
+              // Replace space with T if present
+              if (normalizedDateTime.includes(' ') && !normalizedDateTime.includes('T')) {
+                normalizedDateTime = normalizedDateTime.replace(' ', 'T');
+              }
+              
+              const aptDate = new Date(normalizedDateTime);
+              const now = new Date();
+              
+              // Check if date is valid
+              if (!isNaN(aptDate.getTime())) {
+                // If appointment time has passed, mark as done
+                if (aptDate < now) {
+                  console.log(`[Lawyer] Marking appointment ${apt.id} as done. Time: ${aptDate.toISOString()}, Now: ${now.toISOString()}`);
+                  return { ...apt, status: 'done' };
+                }
+              } else {
+                console.warn('[Lawyer] Invalid date parsed:', normalizedDateTime, 'for appointment:', apt.id);
+              }
+            } catch (e) {
+              // Invalid date format, skip
+              console.warn('[Lawyer] Invalid appointment date format:', appointmentDateTime, 'Error:', e);
+            }
+          }
+        }
+        return apt;
+      });
+      
+      setAppointments(updatedData);
     } catch (error) {
       console.error('Failed to fetch appointments:', error);
       if (error.response?.status === 401) {

@@ -81,6 +81,12 @@ export default function EmployeesManagement() {
     if (editedEmployee.email) {
       apiData.append('email', editedEmployee.email);
     }
+    if (editedEmployee.phone) {
+      apiData.append('phone', editedEmployee.phone);
+    }
+    if (editedEmployee.address) {
+      apiData.append('address', editedEmployee.address);
+    }
     if (editedEmployee.password) {
       apiData.append('password', editedEmployee.password);
       apiData.append('password_confirmation', editedEmployee.password_confirmation);

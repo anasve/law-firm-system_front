@@ -13,6 +13,17 @@ export const StyledTextField = styled(TextField)({
     '&:hover fieldset': { borderColor: alpha(colors.gold, 0.7) },
     '&.Mui-focused fieldset': { borderColor: colors.gold },
     '& .MuiSvgIcon-root': { color: colors.textSecondary },
+    // Placeholder text styling for better visibility
+    '& input::placeholder': {
+      color: alpha(colors.white, 0.6),
+      opacity: 1,
+      fontFamily: 'Arial, sans-serif',
+    },
+    '& textarea::placeholder': {
+      color: alpha(colors.white, 0.6),
+      opacity: 1,
+      fontFamily: 'Arial, sans-serif',
+    },
     // Autofill styles
     '& input:-webkit-autofill': {
       WebkitBoxShadow: `0 0 0 100px ${colors.lightBlack} inset !important`,
@@ -34,8 +45,17 @@ export const StyledTextField = styled(TextField)({
     },
   },
   '& .MuiInputLabel-root': {
-    color: colors.textSecondary,
+    color: alpha(colors.white, 0.9),
     fontFamily: 'Arial, sans-serif',
+    fontWeight: 500,
+  },
+  // Helper text styling for better visibility
+  '& .MuiFormHelperText-root': {
+    color: alpha(colors.white, 0.75),
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '0.875rem',
+    marginTop: '8px',
+    lineHeight: 1.5,
   },
   // Hide number input spinners
   '& input[type=number]': {

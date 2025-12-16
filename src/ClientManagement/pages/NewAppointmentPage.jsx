@@ -41,6 +41,7 @@ import { colors } from '../../AdminManagement/constants';
 import { appointmentsService, lawyersService } from '../services';
 import { guestService } from '../../Guest/services';
 import TimeSlotGrid from '../components/TimeSlotGrid';
+import CalendarMonth from '../components/CalendarMonth';
 
 const SlotCard = styled(Card)(({ selected }) => ({
   backgroundColor: selected ? alpha(colors.gold, 0.2) : colors.black,
@@ -94,7 +95,6 @@ export default function NewAppointmentPage() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [formData, setFormData] = useState({
     lawyer_id: '',
-    availability_id: '',
     subject: '',
     description: '',
     type: 'online',
@@ -306,31 +306,34 @@ export default function NewAppointmentPage() {
       console.log('Response.data keys:', response.data ? Object.keys(response.data) : 'null');
       
       // Handle response format according to API documentation
-      // Expected format: { slots: { available: [], booked: [], unavailable: [], past: [] } }
+      // Expected format: { slots: { available: [], booked: [], unavailable: [], past: [] }, is_holiday: boolean }
       let slotsData = [];
       let bookedSlotsData = [];
       
-      console.log('=== Parsing Response Data ===');
-      console.log('Response.data structure:', response.data);
-      console.log('Response.data.slots:', response.data?.slots);
-      console.log('Response.data.slots?.available:', response.data?.slots?.available);
+      // Check if it's a holiday (Friday)
+      if (response.data?.is_holiday) {
+        setError(response.data?.holiday_reason || 'This day is a holiday (Friday). Please select another date.');
+        setAvailableSlots([]);
+        setBookedAppointments([]);
+        return;
+      }
       
       // Try new format first (from API documentation)
       if (response.data?.slots) {
-        console.log('Found response.data.slots object');
-        
         // Check for available slots
         if (response.data.slots.available && Array.isArray(response.data.slots.available)) {
-          slotsData = response.data.slots.available;
-          console.log('✓ Found available slots:', slotsData.length);
+          slotsData = response.data.slots.available.filter(slot => {
+            // Only include slots with valid start_time
+            // For automatic system, we accept slots with start_time even if id is temp
+            return slot.start_time && (slot.id || slot.start_time);
+          });
         }
         
         // Check for booked slots
         if (response.data.slots.booked && Array.isArray(response.data.slots.booked)) {
           bookedSlotsData = response.data.slots.booked;
-          console.log('✓ Found booked slots:', bookedSlotsData.length);
           
-          // Convert booked slots to appointments format for TimeSlotGrid
+          // Convert booked slots to appointments format
           const bookedAppts = bookedSlotsData.map(slot => ({
             id: slot.appointment_id || slot.id,
             datetime: `${formattedDate} ${slot.start_time || slot.time || '00:00'}:00`,
@@ -339,12 +342,6 @@ export default function NewAppointmentPage() {
             subject: 'Booked',
           }));
           setBookedAppointments(bookedAppts);
-        }
-        
-        // If we found slots object but no available array, check if slots itself is an array
-        if (slotsData.length === 0 && Array.isArray(response.data.slots)) {
-          slotsData = response.data.slots;
-          console.log('✓ Using response.data.slots as array:', slotsData.length);
         }
       }
       
@@ -390,9 +387,47 @@ export default function NewAppointmentPage() {
         }
       }
       
+      // If no slots from API, generate them automatically (8 AM to 2 PM, hourly)
       if (slotsData.length === 0) {
-        console.warn('⚠️ Could not find any slots in response!');
-        console.warn('Full response.data:', JSON.stringify(response.data, null, 2));
+        console.log('⚠️ No slots from API, generating automatically (8 AM - 2 PM)');
+        
+        // Check if it's Friday (holiday)
+        const dateObj = new Date(formattedDate + 'T00:00:00');
+        const dayOfWeek = dateObj.getDay();
+        if (dayOfWeek === 5) {
+          // Friday - no slots
+          setError('Friday is a holiday. Please select another date.');
+          setAvailableSlots([]);
+          setBookedAppointments([]);
+          return;
+        }
+        
+        // Generate slots from 8 AM to 2 PM (hourly)
+        const generatedSlots = [];
+        for (let hour = 8; hour < 14; hour++) {
+          const startTime = `${String(hour).padStart(2, '0')}:00`;
+          const endTime = `${String(hour + 1).padStart(2, '0')}:00`;
+          
+          // Check if this slot is booked
+          const isBooked = bookedSlotsData.some(booked => {
+            const bookedTime = booked.start_time || booked.time || '';
+            return bookedTime.startsWith(startTime);
+          });
+          
+          if (!isBooked) {
+            generatedSlots.push({
+              id: `temp-${hour}`,
+              start_time: startTime,
+              end_time: endTime,
+              duration: 60,
+              status: 'available',
+              is_temp: true,
+            });
+          }
+        }
+        
+        slotsData = generatedSlots;
+        console.log('✓ Generated', slotsData.length, 'automatic slots');
       }
       
       console.log('=== Extracted Slots ===');
@@ -406,9 +441,7 @@ export default function NewAppointmentPage() {
       
       if (slotsData.length === 0) {
         console.warn('No available slots found for date:', formattedDate);
-        // Don't set error as a blocking error, just show info message
-        // The UI will show "No available time slots" message
-        setError('');
+        setError('No available time slots for this date. Please try another date.');
       } else {
         console.log('Successfully loaded', slotsData.length, 'available slots');
         setError(''); // Clear error if slots are found
@@ -422,36 +455,36 @@ export default function NewAppointmentPage() {
       console.error('Request URL:', error.config?.url);
       console.error('Request params:', error.config?.params);
       
-      setAvailableSlots([]);
-      
-      let errorMessage = 'Failed to load available time slots. Please try another date.';
-      
-      if (error.response) {
-        // Server responded with error
-        if (error.response.status === 404) {
-          errorMessage = 'Lawyer or endpoint not found. Please try again.';
-        } else if (error.response.status === 422) {
-          // Validation error
-          if (error.response.data?.errors?.date) {
-            errorMessage = `Date error: ${error.response.data.errors.date[0]}`;
-          } else if (error.response.data?.message) {
-            errorMessage = error.response.data.message;
-          } else {
-            errorMessage = 'Invalid date format. Please select a valid date.';
-          }
-        } else if (error.response.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
-        }
-      } else if (error.request) {
-        // Request was made but no response received
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Check if it's Friday (holiday)
+      const dateObj = new Date(formattedDate + 'T00:00:00');
+      const dayOfWeek = dateObj.getDay();
+      if (dayOfWeek === 5) {
+        setError('Friday is a holiday. Please select another date.');
+        setAvailableSlots([]);
+        setBookedAppointments([]);
+        return;
       }
       
-      setError(errorMessage);
+      // If API fails, generate slots automatically (8 AM to 2 PM, hourly)
+      console.log('⚠️ API error, generating slots automatically (8 AM - 2 PM)');
+      const generatedSlots = [];
+      for (let hour = 8; hour < 14; hour++) {
+        const startTime = `${String(hour).padStart(2, '0')}:00`;
+        const endTime = `${String(hour + 1).padStart(2, '0')}:00`;
+        
+        generatedSlots.push({
+          id: `temp-${hour}`,
+          start_time: startTime,
+          end_time: endTime,
+          duration: 60,
+          status: 'available',
+          is_temp: true,
+        });
+      }
+      
+      setAvailableSlots(generatedSlots);
+      setError(''); // Clear error since we generated slots automatically
+      console.log('✓ Generated', generatedSlots.length, 'automatic slots as fallback');
     } finally {
       setSlotsLoading(false);
       console.log('=== Finished Fetching Slots ===');
@@ -530,34 +563,27 @@ export default function NewAppointmentPage() {
       return;
     }
     
-    // Ensure slot has an id
-    const slotId = slot.id;
-    if (!slotId) {
-      console.warn('Invalid slot selected: slot has no id', slot);
+    // For automatic slot system, we just need start_time
+    if (!slot.start_time) {
+      console.error('Invalid slot: missing start_time', slot);
       setError('Selected time slot is invalid. Please select another time slot.');
       return;
     }
     
-    console.log('Slot selected:', slot);
-    console.log('Slot ID:', slotId, 'Type:', typeof slotId);
+    // Ensure slot has required fields for booking
+    const slotToSelect = {
+      ...slot,
+      start_time: slot.start_time,
+      end_time: slot.end_time || (() => {
+        // Calculate end_time if not provided (add 1 hour)
+        const [hours, minutes] = slot.start_time.split(':').map(Number);
+        const endHours = hours + 1;
+        return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      })(),
+    };
     
-    // Check if slot ID is a generated one (like "slot-0") - these are invalid
-    if (typeof slotId === 'string' && slotId.startsWith('slot-')) {
-      console.error('Invalid slot ID: Generated slot ID detected:', slotId);
-      setError('This time slot is not available. Please select an available time slot (marked in green).');
-      return;
-    }
-    
-    // Ensure availability_id is set correctly
-    const availabilityId = typeof slotId === 'number' ? slotId : parseInt(slotId, 10);
-    if (isNaN(availabilityId) || availabilityId <= 0) {
-      console.error('Invalid slot ID:', slotId);
-      setError('Selected time slot has an invalid ID. Please select another time slot.');
-      return;
-    }
-    
-    setSelectedSlot({ ...slot, id: availabilityId });
-    setFormData({ ...formData, availability_id: availabilityId });
+    console.log('Slot selected:', slotToSelect);
+    setSelectedSlot(slotToSelect);
     setError(''); // Clear any errors when a slot is selected
   };
 
@@ -575,8 +601,14 @@ export default function NewAppointmentPage() {
         return;
       }
 
-      if (!selectedSlot || !selectedSlot.id) {
+      if (!selectedSlot || !selectedSlot.start_time) {
         setError('Please select a time slot');
+        setLoading(false);
+        return;
+      }
+
+      if (!selectedDate) {
+        setError('Please select a date.');
         setLoading(false);
         return;
       }
@@ -600,18 +632,22 @@ export default function NewAppointmentPage() {
         return;
       }
 
-      // Validate availability_id
-      const availabilityId = selectedSlot.id;
-      if (!availabilityId || (typeof availabilityId !== 'number' && isNaN(parseInt(availabilityId)))) {
-        setError('Invalid time slot selected. Please select a valid time slot.');
-        setLoading(false);
-        return;
-      }
+      // Construct datetime from selectedDate and selectedSlot.start_time
+      // Format: YYYY-MM-DDTHH:MM:SS
+      const datetime = `${selectedDate}T${selectedSlot.start_time}:00`;
+
+      // Extract preferred_time and preferred_date from datetime
+      const preferredTime = selectedSlot.start_time; // HH:MM format
+      const preferredDate = selectedDate; // YYYY-MM-DD format
 
       // Prepare data according to API documentation
+      // Use datetime instead of availability_id for automatic slot system
+      // When sending datetime, also include preferred_time and preferred_date
       const data = {
         lawyer_id: parseInt(selectedLawyer.id, 10),
-        availability_id: parseInt(availabilityId, 10),
+        datetime: datetime,
+        preferred_time: preferredTime,
+        preferred_date: preferredDate,
         subject: formData.subject.trim(),
         description: formData.description.trim(),
         type: formData.type || 'online',
@@ -624,8 +660,9 @@ export default function NewAppointmentPage() {
         return;
       }
 
-      if (isNaN(data.availability_id) || data.availability_id <= 0) {
-        setError('Invalid time slot selected. Please select a valid time slot.');
+      // Validate datetime format
+      if (!data.datetime || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(data.datetime)) {
+        setError('Invalid date and time format. Please select a valid time slot.');
         setLoading(false);
         return;
       }
@@ -637,7 +674,17 @@ export default function NewAppointmentPage() {
           setLoading(false);
           return;
         }
-        data.meeting_link = formData.meeting_link.trim();
+        
+        // Validate URL format
+        const meetingLink = formData.meeting_link.trim();
+        try {
+          new URL(meetingLink);
+          data.meeting_link = meetingLink;
+        } catch (e) {
+          setError('Meeting link must be a valid URL (e.g., https://meet.google.com/...)');
+          setLoading(false);
+          return;
+        }
       }
 
       // Add notes if provided
@@ -652,7 +699,7 @@ export default function NewAppointmentPage() {
       console.log('Prepared Data:', data);
       console.log('Data types:', {
         lawyer_id: typeof data.lawyer_id,
-        availability_id: typeof data.availability_id,
+        datetime: typeof data.datetime,
         subject: typeof data.subject,
         description: typeof data.description,
         type: typeof data.type,
@@ -666,7 +713,6 @@ export default function NewAppointmentPage() {
       // Reset form
       setFormData({
         lawyer_id: '',
-        availability_id: '',
         subject: '',
         description: '',
         type: 'online',
@@ -1107,129 +1153,166 @@ export default function NewAppointmentPage() {
             )}
 
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <StyledTextField
-                  fullWidth
-                  required
-                  type="date"
-                  label="Select Date"
-                  value={selectedDate || ''}
-                  onChange={(e) => {
-                    const dateValue = e.target.value;
-                    console.log('Date input changed:', dateValue);
-                    
-                    if (dateValue) {
-                      // Ensure date is in YYYY-MM-DD format
-                      const formattedDate = dateValue.split('T')[0];
-                      
-                      // Validate date format
-                      if (/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
-                        // Validate date is not in the past
-                        const dateObj = new Date(formattedDate + 'T00:00:00');
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        
-                        if (dateObj < today) {
-                          setError('Please select a future date');
-                          setSelectedDate('');
-                          setAvailableSlots([]);
-                        } else {
-                          console.log('Setting selected date:', formattedDate);
-                          setSelectedDate(formattedDate);
-                          setError('');
-                          // Clear selected slot when date changes
-                          setSelectedSlot(null);
-                        }
-                      } else {
-                        setError('Please select a valid date');
-                        setSelectedDate('');
-                        setAvailableSlots([]);
-                      }
-                    } else {
-                      setSelectedDate('');
-                      setAvailableSlots([]);
-                      setSelectedSlot(null);
-                    }
-                  }}
-                  InputLabelProps={{ 
-                    shrink: true,
-                    sx: { color: colors.textSecondary }
-                  }}
-                  inputProps={{
-                    min: new Date().toISOString().split('T')[0],
-                  }}
-                  helperText={selectedDate ? `Selected: ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : 'Please select a date to view available time slots'}
-                  FormHelperTextProps={{
-                    sx: { color: colors.textSecondary, mt: 1 }
+              {/* Calendar Month View */}
+              <Grid size={{ xs: 12, md: 8 }}>
+                <CalendarMonth
+                  lawyerId={selectedLawyer?.id}
+                  selectedDate={selectedDate}
+                  onDateSelect={(dateStr) => {
+                    setSelectedDate(dateStr);
+                    setSelectedSlot(null);
+                    setError('');
                   }}
                 />
               </Grid>
 
-              {selectedDate && (
-                <Grid size={{ xs: 12 }}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      mb: 2, 
-                      color: colors.white,
-                      fontWeight: 'bold',
+              {/* Selected Date Info and Time Slots */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                {selectedDate ? (
+                  <Box>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        backgroundColor: colors.black,
+                        border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ color: colors.gold, mb: 1, fontWeight: 'bold' }}>
+                        Selected Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: colors.white }}>
+                        {new Date(selectedDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </Typography>
+                    </Paper>
+
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mb: 2,
+                        color: colors.white,
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      Available Time Slots
+                    </Typography>
+                    {slotsLoading ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                        <CircularProgress sx={{ color: colors.gold }} />
+                      </Box>
+                    ) : (
+                      <Box>
+                        {Array.isArray(availableSlots) && availableSlots.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {availableSlots.map((slot, index) => {
+                              const isBooked = bookedAppointments.some(
+                                (apt) =>
+                                  apt.datetime &&
+                                  apt.datetime.startsWith(selectedDate) &&
+                                  apt.datetime.includes(slot.start_time)
+                              );
+                              const isSelected = selectedSlot?.id === slot.id;
+                              const isPast = slot.status === 'past' || slot.status === 'unavailable';
+
+                              return (
+                                <Button
+                                  key={slot.id || index}
+                                  variant={isSelected ? 'contained' : 'outlined'}
+                                  disabled={isBooked || isPast}
+                                  onClick={() => handleSlotSelect(slot)}
+                                  sx={{
+                                    width: '100%',
+                                    py: 1.5,
+                                    backgroundColor: isSelected
+                                      ? colors.gold
+                                      : isBooked
+                                      ? alpha('#f44336', 0.2)
+                                      : alpha(colors.gold, 0.1),
+                                    color: isSelected
+                                      ? colors.black
+                                      : isBooked
+                                      ? '#f44336'
+                                      : colors.gold,
+                                    borderColor: isSelected
+                                      ? colors.gold
+                                      : isBooked
+                                      ? '#f44336'
+                                      : colors.gold,
+                                    '&:hover': {
+                                      backgroundColor: isSelected
+                                        ? alpha(colors.gold, 0.9)
+                                        : isBooked
+                                        ? undefined
+                                        : alpha(colors.gold, 0.2),
+                                    },
+                                    '&.Mui-disabled': {
+                                      backgroundColor: alpha('#f44336', 0.1),
+                                      color: alpha('#f44336', 0.5),
+                                      borderColor: alpha('#f44336', 0.3),
+                                    },
+                                  }}
+                                >
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                                    <TimeIcon sx={{ fontSize: 20 }} />
+                                    <Typography variant="body1" fontWeight="bold">
+                                      {slot.start_time} - {slot.end_time || slot.start_time}
+                                    </Typography>
+                                    {isBooked && (
+                                      <Chip
+                                        label="Booked"
+                                        size="small"
+                                        sx={{
+                                          ml: 'auto',
+                                          backgroundColor: '#f44336',
+                                          color: 'white',
+                                          fontSize: '0.7rem',
+                                          height: '20px',
+                                        }}
+                                      />
+                                    )}
+                                  </Box>
+                                </Button>
+                              );
+                            })}
+                          </Box>
+                        ) : (
+                          <Alert severity="info" sx={{ backgroundColor: colors.lightBlack, color: colors.white }}>
+                            {(() => {
+                              const date = new Date(selectedDate);
+                              const dayOfWeek = date.getDay();
+                              if (dayOfWeek === 5) {
+                                return 'Friday is a holiday. Please select another day.';
+                              }
+                              return 'No available time slots for this date. Please try another date.';
+                            })()}
+                          </Alert>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
+                  <Paper
+                    sx={{
+                      p: 3,
+                      backgroundColor: colors.black,
+                      border: `1px solid ${alpha(colors.gold, 0.2)}`,
+                      borderRadius: '8px',
+                      textAlign: 'center',
                     }}
                   >
-                    Available Time Slots
-                  </Typography>
-                  {slotsLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                      <CircularProgress sx={{ color: colors.gold }} />
-                    </Box>
-                  ) : (
-                    <Box>
-                      <TimeSlotGrid
-                        slots={availableSlots}
-                        bookedAppointments={bookedAppointments}
-                        selectedSlot={selectedSlot}
-                        onSlotSelect={handleSlotSelect}
-                        startHour={8}
-                        endHour={18}
-                        slotDuration={60}
-                      />
-                      {Array.isArray(availableSlots) && availableSlots.length === 0 && (
-                        <Box sx={{ textAlign: 'center', p: 3, mt: 2 }}>
-                          <Alert severity="info" sx={{ mb: 2 }}>
-                            No available time slots for {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { 
-                              weekday: 'long', 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            }) : 'this date'}. Please try another date.
-                          </Alert>
-                          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 2 }}>
-                            If you need to book an appointment urgently, please contact the lawyer directly or try selecting a different date.
-                          </Typography>
-                          <Button
-                            variant="outlined"
-                            onClick={() => {
-                              const tomorrow = new Date();
-                              tomorrow.setDate(tomorrow.getDate() + 1);
-                              const tomorrowStr = tomorrow.toISOString().split('T')[0];
-                              setSelectedDate(tomorrowStr);
-                            }}
-                            sx={{
-                              color: colors.gold,
-                              borderColor: colors.gold,
-                              '&:hover': {
-                                borderColor: colors.gold,
-                                backgroundColor: alpha(colors.gold, 0.1),
-                              },
-                            }}
-                          >
-                            Try Tomorrow
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
-                </Grid>
-              )}
+                    <CalendarIcon sx={{ fontSize: 48, color: colors.textSecondary, mb: 2 }} />
+                    <Typography variant="body1" sx={{ color: colors.textSecondary }}>
+                      Select a date from the calendar to view available time slots
+                    </Typography>
+                  </Paper>
+                )}
+              </Grid>
             </Grid>
           </Box>
         )}

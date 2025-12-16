@@ -18,7 +18,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors } from '../AdminManagement/constants';
-import { setToken } from './services/api';
+import { setToken, api, API_BASE_URL_FULL } from './services/api';
 
 const StyledTextField = styled(TextField)({
   '& .MuiInputBase-root': {
@@ -109,33 +109,76 @@ export default function LoginEmployee() {
     setLoading(true);
 
     try {
-      await axios.get("/sanctum/csrf-cookie", {
-        withCredentials: true,
-        headers: {
-          "Accept": "application/json",
-        },
-      });
-
-      const response = await axios.post(
-        "/api/employee/login",
-        {
-          email: values.email,
-          password: values.password,
-        },
-        {
+      // Fetch CSRF cookie from Laravel Sanctum
+      const csrfUrl = `${API_BASE_URL_FULL}/sanctum/csrf-cookie`;
+      try {
+        await axios.get(csrfUrl, {
           withCredentials: true,
           headers: {
-            "Content-Type": "application/json",
             "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
           },
-        }
-      );
+        });
+      } catch (csrfError) {
+        console.warn('CSRF cookie fetch failed (may not be needed):', csrfError);
+        // Continue anyway, some APIs don't need CSRF
+      }
 
-      setToken(response.data.token);
+      // Login with credentials using the api instance
+      // Note: API_BASE_URL already includes '/employee', so we use '/login' not '/employee/login'
+      const response = await api.post('/login', {
+        email: values.email,
+        password: values.password,
+      });
+      
+      console.log('Login response:', response);
+
+      // Handle different response formats
+      const token = response.data?.token || 
+                   response.data?.data?.token || 
+                   response.data?.access_token;
+
+      if (!token) {
+        console.error('No token in response:', response.data);
+        setError("Login failed: No token received from server.");
+        return;
+      }
+
+      // Store token
+      setToken(token);
+
+      console.log("Login success:", response.data);
       navigate("/employee/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
+      console.error('Login error:', err);
+      console.error('Error response:', err.response);
+      
+      // Better error handling
+      let errorMessage = "Login failed. Please check your credentials.";
+      
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 401 || err.response.status === 422) {
+          errorMessage = err.response.data?.message || 
+                        err.response.data?.error || 
+                        "Invalid email or password. Please try again.";
+        } else if (err.response.status === 404) {
+          errorMessage = "Login endpoint not found. Please check API configuration.";
+        } else if (err.response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
+        } else {
+          errorMessage = err.response.data?.message || 
+                        err.response.data?.error || 
+                        errorMessage;
+        }
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = "Cannot connect to server. Please check your connection.";
+      } else {
+        // Error in request setup
+        errorMessage = err.message || errorMessage;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

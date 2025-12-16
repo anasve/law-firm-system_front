@@ -105,16 +105,41 @@ const FilterCard = styled(Paper)({
   border: `1px solid ${alpha(colors.gold, 0.1)}`,
 });
 
-const ConsultationCard = styled(Card)({
+const ConsultationCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'status',
+})(({ status }) => {
+  const getStatusBorder = () => {
+    switch (status) {
+      case 'rejected':
+        return `2px solid ${colors.error}`;
+      case 'completed':
+        return `1px solid ${alpha(colors.success, 0.5)}`;
+      case 'cancelled':
+        return `1px solid ${alpha(colors.textSecondary, 0.3)}`;
+      case 'accepted':
+        return `1px solid ${alpha(colors.info, 0.5)}`;
+      case 'pending':
+        return `1px solid ${alpha('#ff9800', 0.5)}`;
+      default:
+        return `1px solid ${alpha(colors.gold, 0.2)}`;
+    }
+  };
+
+  return {
   backgroundColor: colors.lightBlack,
   color: colors.white,
-  border: `1px solid ${alpha(colors.gold, 0.1)}`,
+    border: getStatusBorder(),
+    borderRadius: '12px',
   transition: 'all 0.3s ease',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: `0 8px 16px ${alpha(colors.black, 0.3)}`,
-    borderColor: colors.gold,
+      boxShadow: `0 8px 24px ${alpha(colors.black, 0.4)}`,
+      borderColor: status === 'rejected' ? colors.error : colors.gold,
   },
+  };
 });
 
 export default function ConsultationsPage() {
@@ -550,82 +575,130 @@ export default function ConsultationsPage() {
         <Grid container spacing={3}>
           {Array.isArray(filteredConsultations) && filteredConsultations.length > 0 ? (
             filteredConsultations.map((consultation) => (
-              <Grid item xs={12} md={6} key={consultation.id}>
-                <ConsultationCard>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <QuestionAnswerIcon sx={{ color: colors.gold, fontSize: 20 }} />
-                          <Typography variant="h6" fontWeight="bold" sx={{ color: colors.white }}>
+              <Grid item xs={12} md={6} lg={4} key={consultation.id}>
+                <ConsultationCard status={consultation.status}>
+                  <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Header with Subject and Status */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, gap: 2 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                          <QuestionAnswerIcon sx={{ color: colors.gold, fontSize: 22, flexShrink: 0 }} />
+                          <Typography 
+                            variant="h6" 
+                            fontWeight={600} 
+                            sx={{ 
+                              color: alpha(colors.white, 0.95),
+                              fontSize: '1.1rem',
+                              lineHeight: 1.4,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
                             {consultation.subject}
                           </Typography>
                           {consultation.priority === 'urgent' && (
                             <Tooltip title="Urgent">
-                              <PriorityHighIcon sx={{ color: colors.error, fontSize: 20 }} />
+                              <PriorityHighIcon sx={{ color: colors.error, fontSize: 20, flexShrink: 0 }} />
                             </Tooltip>
                           )}
                         </Box>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: colors.textSecondary,
-                            mb: 2,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {consultation.description}
-                        </Typography>
                       </Box>
                       <Chip
                         label={statusLabels[consultation.status] || consultation.status}
                         color={statusColors[consultation.status] || 'default'}
                         size="small"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: '24px',
+                          flexShrink: 0,
+                          ...(consultation.status === 'cancelled' && {
+                            backgroundColor: alpha(colors.textSecondary, 0.3),
+                            color: alpha(colors.white, 0.9),
+                            border: `1px solid ${alpha(colors.textSecondary, 0.5)}`,
+                            '& .MuiChip-label': {
+                              color: alpha(colors.white, 0.9),
+                            },
+                          }),
+                        }}
                       />
                     </Box>
 
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {/* Description */}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                        color: alpha(colors.white, 0.8),
+                        mb: 2.5,
+                        lineHeight: 1.6,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                        fontSize: '0.9rem',
+                          }}
+                        >
+                      {consultation.description || 'No description provided'}
+                        </Typography>
+
+                    {/* Details Section */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 'auto' }}>
                       {consultation.lawyer && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <GavelIcon sx={{ fontSize: 18, color: colors.gold }} />
-                          <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                            Lawyer: <span style={{ color: colors.gold }}>{consultation.lawyer.name}</span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <PersonIcon sx={{ fontSize: 18, color: colors.gold, flexShrink: 0 }} />
+                          <Typography variant="body2" sx={{ color: alpha(colors.white, 0.75), fontSize: '0.875rem' }}>
+                            <Box component="span" sx={{ color: alpha(colors.white, 0.6) }}>Client: </Box>
+                            <Box component="span" sx={{ color: colors.gold, fontWeight: 500 }}>
+                              {consultation.lawyer.name}
+                            </Box>
                           </Typography>
                         </Box>
                       )}
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        {channelIcons[consultation.preferred_channel] ? (
+                          <Box sx={{ color: alpha(colors.white, 0.7), display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                         {channelIcons[consultation.preferred_channel]}
-                        <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                          Channel: {channelLabels[consultation.preferred_channel] || consultation.preferred_channel}
+                          </Box>
+                        ) : (
+                          <ChatIcon sx={{ fontSize: 18, color: alpha(colors.white, 0.7), flexShrink: 0 }} />
+                        )}
+                        <Typography variant="body2" sx={{ color: alpha(colors.white, 0.75), fontSize: '0.875rem' }}>
+                          {channelLabels[consultation.preferred_channel] || consultation.preferred_channel}
                         </Typography>
                       </Box>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ScheduleIcon sx={{ fontSize: 18, color: colors.textSecondary }} />
-                        <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <ScheduleIcon sx={{ fontSize: 18, color: alpha(colors.white, 0.7), flexShrink: 0 }} />
+                        <Typography variant="body2" sx={{ color: alpha(colors.white, 0.75), fontSize: '0.875rem' }}>
                           {new Date(consultation.created_at).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
                           })}
                         </Typography>
                       </Box>
                     </Box>
                   </CardContent>
-                  <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                  <CardActions sx={{ justifyContent: 'space-between', p: 2, pt: 0, borderTop: `1px solid ${alpha(colors.gold, 0.1)}` }}>
                     <Button
                       size="small"
                       startIcon={<VisibilityIcon />}
                       onClick={() => handleViewDetails(consultation.id)}
-                      sx={{ color: colors.gold }}
+                      sx={{ 
+                        color: colors.gold,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        fontSize: '0.875rem',
+                        '&:hover': {
+                          backgroundColor: alpha(colors.gold, 0.1),
+                        },
+                      }}
                     >
-                      View Details
+                      VIEW DETAILS
                     </Button>
                     {consultation.status !== 'cancelled' && consultation.status !== 'completed' && (
                       <Tooltip title="Cancel Consultation">
@@ -635,7 +708,12 @@ export default function ConsultationsPage() {
                             setSelectedConsultation(consultation);
                             setCancelDialogOpen(true);
                           }}
-                          sx={{ color: colors.error }}
+                          sx={{ 
+                            color: colors.error,
+                            '&:hover': {
+                              backgroundColor: alpha(colors.error, 0.1),
+                            },
+                          }}
                         >
                           <CancelIcon />
                         </IconButton>
@@ -741,7 +819,17 @@ export default function ConsultationsPage() {
                   <Chip
                     label={statusLabels[selectedConsultation.status] || selectedConsultation.status}
                     color={statusColors[selectedConsultation.status] || 'default'}
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                      mb: 2,
+                      ...(selectedConsultation.status === 'cancelled' && {
+                        backgroundColor: alpha(colors.textSecondary, 0.3),
+                        color: alpha(colors.white, 0.9),
+                        border: `1px solid ${alpha(colors.textSecondary, 0.5)}`,
+                        '& .MuiChip-label': {
+                          color: alpha(colors.white, 0.9),
+                        },
+                      }),
+                    }}
                   />
                 </Grid>
 

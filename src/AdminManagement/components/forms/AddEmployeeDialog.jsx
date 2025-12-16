@@ -109,6 +109,8 @@ export default function AddEmployeeDialog({ open, onClose, onSuccess }) {
     name: '',
     email: '',
     age: '',
+    phone: '',
+    address: '',
     password: '',
     password_confirmation: '',
     photo: null,
@@ -179,6 +181,8 @@ export default function AddEmployeeDialog({ open, onClose, onSuccess }) {
       name: '',
       email: '',
       age: '',
+      phone: '',
+      address: '',
       password: '',
       password_confirmation: '',
       photo: null,
@@ -280,6 +284,29 @@ export default function AddEmployeeDialog({ open, onClose, onSuccess }) {
                     fullWidth
                     required
                     inputProps={{ min: 18, max: 100 }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <StyledTextField
+                    name="phone"
+                    label="Phone Number"
+                    value={form.phone}
+                    onChange={handleInput}
+                    fullWidth
+                    placeholder="+1234567890"
+                    autoComplete="off"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <StyledTextField
+                    name="address"
+                    label="Address"
+                    value={form.address}
+                    onChange={handleInput}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    autoComplete="off"
                   />
                 </Grid>
               </Grid>

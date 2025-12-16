@@ -63,6 +63,8 @@ export default function EditEmployeeDialog({ open, onClose, employee, onSave }) 
         name: employee.name || '',
         age: employee.age || '',
         email: employee.email || '',
+        phone: employee.phone || '',
+        address: employee.address || '',
         password: '',
         password_confirmation: '',
         image: null,
@@ -160,6 +162,27 @@ export default function EditEmployeeDialog({ open, onClose, employee, onSave }) 
           sx={inputFieldStyles}
           InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
           inputProps={{ min: 18, max: 100 }}
+        />
+        <TextField
+          name="phone"
+          label="Phone Number"
+          value={formData.phone}
+          onChange={handleChange}
+          autoComplete="off"
+          sx={inputFieldStyles}
+          InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
+          placeholder="+1234567890"
+        />
+        <TextField
+          name="address"
+          label="Address"
+          value={formData.address}
+          onChange={handleChange}
+          autoComplete="off"
+          multiline
+          rows={2}
+          sx={inputFieldStyles}
+          InputLabelProps={{ sx: { color: '#C4A484', left: '1.5rem', right: 'auto' } }}
         />
         <TextField
           name="password"

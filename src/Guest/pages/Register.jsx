@@ -14,11 +14,13 @@ import {
 } from "@mui/material";
 import { styled, alpha } from '@mui/material/styles';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import axios from "axios";
 import { colors } from '../../AdminManagement/constants';
+import { api, API_BASE_URL_FULL } from '../services/api';
 
 const StyledTextField = styled(TextField)({
   '& .MuiInputBase-root': {
@@ -101,14 +103,38 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
   const [values, setValues] = useState({ 
     name: "", 
     email: "", 
+    phone: "",
+    address: "",
     password: "", 
-    password_confirmation: "" 
+    password_confirmation: "",
+    image: null
   });
 
   const navigate = useNavigate();
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setValues({ ...values, image: file });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,32 +143,100 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await axios.get("/sanctum/csrf-cookie", {
-        withCredentials: true,
-        headers: {
-          "Accept": "application/json",
-        },
-      });
-
-      const response = await axios.post(
-        "/api/guest/register",
-        values,
-        {
+      // Fetch CSRF cookie from Laravel Sanctum
+      const csrfUrl = `${API_BASE_URL_FULL}/sanctum/csrf-cookie`;
+      try {
+        await axios.get(csrfUrl, {
           withCredentials: true,
           headers: {
-            "Content-Type": "application/json",
             "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
           },
-        }
-      );
+        });
+      } catch (csrfError) {
+        console.warn('CSRF cookie fetch failed (may not be needed):', csrfError);
+        // Continue anyway, some APIs don't need CSRF
+      }
 
-      setSuccess(response.data.message || "Registered successfully. Please check your email for verification.");
+      // Register using the api instance
+      // Note: API_BASE_URL already includes '/guest', so we use '/register' not '/guest/register'
+      // If image is a File object, use FormData
+      let response;
+      if (values.image instanceof File) {
+        const formData = new FormData();
+        formData.append('name', values.name || '');
+        formData.append('email', values.email || '');
+        if (values.phone) formData.append('phone', values.phone);
+        if (values.address) formData.append('address', values.address);
+        formData.append('password', values.password);
+        formData.append('password_confirmation', values.password_confirmation);
+        formData.append('image', values.image);
+        
+        response = await api.post('/register', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // Otherwise, use regular JSON
+        response = await api.post('/register', values);
+      }
+      
+      console.log('Register response:', response);
+
+      setSuccess(response.data?.message || 
+                response.data?.data?.message || 
+                "Registered successfully. Please check your email for verification.");
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      console.error('Register error:', err);
+      console.error('Error response:', err.response);
+      
+      // Better error handling
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 422) {
+          const errors = err.response.data?.errors;
+          if (errors) {
+            // Format validation errors
+            const errorMessages = Object.entries(errors)
+              .map(([field, messages]) => {
+                const fieldName = field === 'email' ? 'Email' : 
+                                 field === 'password' ? 'Password' : 
+                                 field === 'name' ? 'Name' :
+                                 field === 'phone' ? 'Phone' :
+                                 field === 'address' ? 'Address' :
+                                 field === 'image' ? 'Image' : field;
+                return `${fieldName}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
+              })
+              .join('\n');
+            errorMessage = errorMessages || 'Validation failed. Please check your input.';
+          } else {
+            errorMessage = err.response.data?.message || 
+                          err.response.data?.error || 
+                          errorMessage;
+          }
+        } else if (err.response.status === 404) {
+          errorMessage = "Registration endpoint not found. Please check API configuration.";
+        } else if (err.response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
+        } else {
+          errorMessage = err.response.data?.message || 
+                        err.response.data?.error || 
+                        errorMessage;
+        }
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = "Cannot connect to server. Please check your connection.";
+      } else {
+        // Error in request setup
+        errorMessage = err.message || errorMessage;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -185,6 +279,54 @@ export default function Register() {
         {success && <Alert severity="success" variant="filled" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          {/* Profile Image Upload */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+            <label htmlFor="image-upload">
+              <input
+                accept="image/*"
+                id="image-upload"
+                type="file"
+                style={{ display: 'none' }}
+                onChange={handleImageChange}
+              />
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Avatar
+                  src={imagePreview}
+                  alt="Profile"
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    bgcolor: colors.gold,
+                    border: `3px solid ${colors.gold}`,
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                >
+                  {!imagePreview && <PersonAddIcon sx={{ fontSize: 50, color: colors.black }} />}
+                </Avatar>
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    bgcolor: colors.gold,
+                    color: colors.black,
+                    '&:hover': { bgcolor: colors.darkGold },
+                  }}
+                  component="span"
+                >
+                  <PhotoCameraIcon />
+                </IconButton>
+              </Box>
+            </label>
+            <Typography variant="body2" sx={{ color: colors.textSecondary, mt: 1 }}>
+              Click to upload profile picture (Optional)
+            </Typography>
+          </Box>
+
           <StyledTextField
             fullWidth
             required
@@ -207,6 +349,29 @@ export default function Register() {
             onChange={(e) => setValues({ ...values, email: e.target.value })}
             sx={{ mb: 2.5 }}
             autoComplete="email"
+          />
+          <StyledTextField
+            fullWidth
+            id="phone"
+            label="Phone Number"
+            name="phone"
+            value={values.phone}
+            onChange={(e) => setValues({ ...values, phone: e.target.value })}
+            sx={{ mb: 2.5 }}
+            placeholder="+1234567890"
+            autoComplete="tel"
+          />
+          <StyledTextField
+            fullWidth
+            id="address"
+            label="Address"
+            name="address"
+            value={values.address}
+            onChange={(e) => setValues({ ...values, address: e.target.value })}
+            sx={{ mb: 2.5 }}
+            multiline
+            rows={2}
+            autoComplete="street-address"
           />
           <StyledTextField
             fullWidth

@@ -7,6 +7,7 @@ import { alpha } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -108,6 +109,15 @@ export default function UserDetailsDialog({ open, onClose, user }) {
                   <Box>
                     <Typography color={colors.textSecondary} variant="body2">Phone Number</Typography>
                     <Typography>{displayData.phone}</Typography>
+                  </Box>
+                </Grid>
+              )}
+              {displayData.address && (
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                  <LocationOnOutlinedIcon sx={{ color: colors.gold, mt: 0.5 }} />
+                  <Box>
+                    <Typography color={colors.textSecondary} variant="body2">Address</Typography>
+                    <Typography>{displayData.address}</Typography>
                   </Box>
                 </Grid>
               )}

@@ -4,10 +4,12 @@ import axios from "axios";
 const LAWYER_TOKEN_KEY = "lawyerToken";
 
 // Use environment variable or default to Laravel API URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const BASE_API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+export const API_BASE_URL = BASE_API_URL;
+export const API_BASE_URL_FULL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8000';
 
 export const api = axios.create({
-  baseURL: `${API_BASE_URL}/lawyer`,
+  baseURL: `${BASE_API_URL}/lawyer`,
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json"

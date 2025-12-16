@@ -127,6 +127,8 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
     name: '',
     email: '',
     age: '',
+    phone: '',
+    address: '',
     password: '',
     password_confirmation: '',
     specialization_ids: [],
@@ -220,6 +222,8 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
       if (form.name) formData.append('name', form.name);
       if (form.email) formData.append('email', form.email);
       if (form.age) formData.append('age', form.age);
+      if (form.phone) formData.append('phone', form.phone);
+      if (form.address) formData.append('address', form.address);
       if (form.password) formData.append('password', form.password);
       if (form.password_confirmation) formData.append('password_confirmation', form.password_confirmation);
       
@@ -289,6 +293,8 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
       name: '',
       email: '',
       age: '',
+      phone: '',
+      address: '',
       password: '',
       password_confirmation: '',
       specialization_ids: [],
@@ -392,6 +398,29 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
                     fullWidth
                     required
                     inputProps={{ min: 18, max: 100 }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <StyledTextField
+                    name="phone"
+                    label="Phone Number"
+                    value={form.phone}
+                    onChange={handleInput}
+                    fullWidth
+                    placeholder="+1234567890"
+                    autoComplete="off"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <StyledTextField
+                    name="address"
+                    label="Address"
+                    value={form.address}
+                    onChange={handleInput}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    autoComplete="off"
                   />
                 </Grid>
               </Grid>

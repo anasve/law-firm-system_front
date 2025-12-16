@@ -32,9 +32,6 @@ export const consultationsService = {
     
     // Add appointment fields only if preferred_channel is 'appointment'
     if (data.preferred_channel === 'appointment') {
-      if (data.appointment_availability_id && !isNaN(data.appointment_availability_id) && data.appointment_availability_id > 0) {
-        formData.append('appointment_availability_id', data.appointment_availability_id.toString());
-      }
       if (data.appointment_type) {
         formData.append('appointment_type', data.appointment_type);
       }

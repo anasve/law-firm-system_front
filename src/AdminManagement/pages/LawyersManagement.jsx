@@ -86,6 +86,12 @@ export default function LawyersManagement() {
     if (editedLawyer.email) {
       apiData.append('email', editedLawyer.email);
     }
+    if (editedLawyer.phone) {
+      apiData.append('phone', editedLawyer.phone);
+    }
+    if (editedLawyer.address) {
+      apiData.append('address', editedLawyer.address);
+    }
     if (editedLawyer.password) {
       apiData.append('password', editedLawyer.password);
       apiData.append('password_confirmation', editedLawyer.password_confirmation);
