@@ -8,12 +8,14 @@ export const clientsService = {
   getRejectedClients: () => api.get('/clients/rejected'),
   getSuspendedClients: () => api.get('/clients/suspended'),
   getArchivedClients: () => api.get('/clients/archived'),
+  createClient: (data) => api.post('/clients', data),
+  updateClient: (id, data) => api.put(`/clients/${id}`, data),
   activateClient: (id) => api.post(`/clients/${id}/activate`),
   rejectClient: (id) => api.post(`/clients/${id}/reject`),
-  suspendClient: (id) => api.post(`/clients/${id}/suspend`),
-  updateClient: (id, data) => api.put(`/clients/${id}`, data),
-  deleteClient: (id) => api.delete(`/clients/${id}`),
+  suspendClient: (id) => api.post(`/clients/${id}/suspend`, {}),
+  archiveClient: (id) => api.delete(`/clients/${id}`),
   restoreClient: (id) => api.put(`/clients/${id}/restore`),
+  deleteClient: (id) => api.delete(`/clients/${id}`),
   forceDeleteClient: (id) => api.delete(`/clients/${id}/force`),
 };
 

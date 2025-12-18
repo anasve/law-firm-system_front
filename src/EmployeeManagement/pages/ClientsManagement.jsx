@@ -38,6 +38,11 @@ import {
   Close as CloseIcon,
   Phone as PhoneIcon,
   LocationOn as LocationIcon,
+  Edit as EditIcon,
+  Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
@@ -79,11 +84,24 @@ export default function ClientsManagement() {
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuClientId, setMenuClientId] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    password: '',
+    password_confirmation: '',
+  });
 
   useEffect(() => {
     fetchClients();
@@ -114,6 +132,9 @@ export default function ClientsManagement() {
           break;
         case 4:
           response = await clientsService.getRejectedClients();
+          break;
+        case 5:
+          response = await clientsService.getArchivedClients();
           break;
         default:
           response = await clientsService.getClients();
@@ -240,13 +261,21 @@ export default function ClientsManagement() {
     try {
       setActionLoading(true);
       setError('');
-      await clientsService.suspendClient(selectedClient.id);
+      console.log('Suspending client:', selectedClient.id);
+      const response = await clientsService.suspendClient(selectedClient.id);
+      console.log('Suspend response:', response);
       setSuccess('تم تعليق العميل بنجاح');
       setSuspendDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'فشل تعليق العميل');
+      console.error('Suspend error:', error);
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message || 
+                          'فشل تعليق العميل';
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -279,6 +308,152 @@ export default function ClientsManagement() {
       case 'suspend':
         setSuspendDialogOpen(true);
         break;
+      case 'edit':
+        setFormData({
+          name: client.name || '',
+          email: client.email || '',
+          phone: client.phone || '',
+          address: client.address || '',
+          password: '',
+          password_confirmation: '',
+        });
+        setIsEditMode(true);
+        setAddEditDialogOpen(true);
+        break;
+      case 'archive':
+        setArchiveDialogOpen(true);
+        break;
+      case 'restore':
+        setRestoreDialogOpen(true);
+        break;
+      case 'delete':
+        setDeleteDialogOpen(true);
+        break;
+    }
+  };
+
+  const handleAddClient = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      password: '',
+      password_confirmation: '',
+    });
+    setIsEditMode(false);
+    setSelectedClient(null);
+    setAddEditDialogOpen(true);
+  };
+
+  const handleSaveClient = async () => {
+    try {
+      setActionLoading(true);
+      setError('');
+      
+      // Validation
+      if (!formData.name || !formData.email) {
+        setError('الاسم والبريد الإلكتروني مطلوبان');
+        setActionLoading(false);
+        return;
+      }
+
+      if (!isEditMode && (!formData.password || formData.password.length < 6)) {
+        setError('كلمة المرور مطلوبة ويجب أن تكون 6 أحرف على الأقل');
+        setActionLoading(false);
+        return;
+      }
+
+      if (formData.password && formData.password !== formData.password_confirmation) {
+        setError('كلمات المرور غير متطابقة');
+        setActionLoading(false);
+        return;
+      }
+
+      const data = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone?.trim() || '',
+        address: formData.address?.trim() || '',
+      };
+
+      if (formData.password) {
+        data.password = formData.password;
+        data.password_confirmation = formData.password_confirmation;
+      }
+
+      if (isEditMode && selectedClient) {
+        await clientsService.updateClient(selectedClient.id, data);
+        setSuccess('تم تحديث العميل بنجاح');
+      } else {
+        await clientsService.createClient(data);
+        setSuccess('تم إضافة العميل بنجاح');
+      }
+
+      setAddEditDialogOpen(false);
+      await fetchClients();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Failed to save client:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.errors ? 
+                          Object.values(error.response.data.errors).flat().join(', ') :
+                          (isEditMode ? 'فشل تحديث العميل' : 'فشل إضافة العميل');
+      setError(errorMessage);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedClient) return;
+    try {
+      setActionLoading(true);
+      setError('');
+      await clientsService.forceDeleteClient(selectedClient.id);
+      setSuccess('تم حذف العميل بنجاح');
+      setDeleteDialogOpen(false);
+      await fetchClients();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Delete error:', error);
+      setError(error.response?.data?.message || error.message || 'فشل حذف العميل');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!selectedClient) return;
+    try {
+      setActionLoading(true);
+      setError('');
+      await clientsService.archiveClient(selectedClient.id);
+      setSuccess('تم أرشفة العميل بنجاح');
+      setArchiveDialogOpen(false);
+      await fetchClients();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'فشل أرشفة العميل');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!selectedClient) return;
+    try {
+      setActionLoading(true);
+      setError('');
+      await clientsService.restoreClient(selectedClient.id);
+      setSuccess('تم إلغاء أرشفة العميل بنجاح');
+      setRestoreDialogOpen(false);
+      await fetchClients();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.message || 'فشل إلغاء أرشفة العميل');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -312,6 +487,9 @@ export default function ClientsManagement() {
                 <RefreshIcon />
               </IconButton>
             </Tooltip>
+            <StyledButton startIcon={<AddIcon />} onClick={handleAddClient}>
+              إضافة عميل جديد
+            </StyledButton>
           </Box>
         </Box>
       </WelcomeBanner>
@@ -448,6 +626,7 @@ export default function ClientsManagement() {
         <Tab label="معتمد" />
         <Tab label="معلق" />
         <Tab label="مرفوض" />
+        <Tab label="أرشيف" />
       </Tabs>
 
       {/* Clients List */}
@@ -488,22 +667,60 @@ export default function ClientsManagement() {
                           </Avatar>
                         )}
                         <Box>
-                          <Typography variant="h6" fontWeight="bold">
+                          <Typography 
+                            variant="h6" 
+                            fontWeight={600}
+                            sx={{ 
+                              color: alpha(colors.white, 0.95),
+                              fontSize: '1.1rem',
+                              mb: 0.5,
+                            }}
+                          >
                             {client.name}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                            <EmailIcon sx={{ fontSize: 14 }} />
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              color: alpha(colors.white, 0.8),
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 0.5, 
+                              mt: 0.5,
+                              fontSize: '0.875rem',
+                            }}
+                          >
+                            <EmailIcon sx={{ fontSize: 14, color: colors.gold }} />
                             {client.email}
                           </Typography>
                           {client.phone && (
-                            <Typography variant="body2" sx={{ color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                              <PhoneIcon sx={{ fontSize: 14 }} />
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: alpha(colors.white, 0.8),
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 0.5, 
+                                mt: 0.5,
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              <PhoneIcon sx={{ fontSize: 14, color: colors.gold }} />
                               {client.phone}
                             </Typography>
                           )}
                           {client.address && (
-                            <Typography variant="body2" sx={{ color: colors.textSecondary, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                              <LocationIcon sx={{ fontSize: 14 }} />
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: alpha(colors.white, 0.8),
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 0.5, 
+                                mt: 0.5,
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              <LocationIcon sx={{ fontSize: 14, color: colors.gold }} />
                               {client.address}
                             </Typography>
                           )}
@@ -542,6 +759,50 @@ export default function ClientsManagement() {
                       عرض التفاصيل
                     </Button>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Tooltip title="تعديل">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleMenuAction('edit', client)}
+                          sx={{ color: colors.gold }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {!client.deleted_at && (
+                        <Tooltip title="أرشفة">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleMenuAction('archive', client)}
+                            sx={{ color: '#ff9800' }}
+                          >
+                            <ArchiveIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {client.deleted_at && (
+                        <>
+                          <Tooltip title="إلغاء أرشفة">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleMenuAction('restore', client)}
+                              sx={{ color: colors.success }}
+                            >
+                              <UnarchiveIcon />
+                            </IconButton>
+                          </Tooltip>
+                          {tab === 5 && (
+                            <Tooltip title="حذف">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleMenuAction('delete', client)}
+                                sx={{ color: colors.error }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
                       {client.status === 'pending' && (
                         <>
                           <Tooltip title="تفعيل">
@@ -860,6 +1121,195 @@ export default function ClientsManagement() {
         onConfirm={handleSuspend}
         title="تعليق العميل"
         message={`هل أنت متأكد من تعليق العميل "${selectedClient?.name}"؟`}
+        loading={actionLoading}
+      />
+
+      {/* Add/Edit Client Dialog */}
+      <Dialog
+        open={addEditDialogOpen}
+        onClose={() => {
+          setAddEditDialogOpen(false);
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            address: '',
+            password: '',
+            password_confirmation: '',
+          });
+          setIsEditMode(false);
+          setSelectedClient(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.lightBlack,
+            color: colors.white,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
+            {isEditMode ? 'تعديل العميل' : 'إضافة عميل جديد'}
+          </Typography>
+          <IconButton onClick={() => {
+            setAddEditDialogOpen(false);
+            setFormData({
+              name: '',
+              email: '',
+              phone: '',
+              address: '',
+              password: '',
+              password_confirmation: '',
+            });
+            setIsEditMode(false);
+            setSelectedClient(null);
+          }} sx={{ color: colors.white }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <StyledTextField
+              fullWidth
+              label="الاسم"
+              name="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <StyledTextField
+              fullWidth
+              label="البريد الإلكتروني"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <StyledTextField
+              fullWidth
+              label="رقم الهاتف"
+              name="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+            <StyledTextField
+              fullWidth
+              label="العنوان"
+              name="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              multiline
+              rows={2}
+            />
+            {!isEditMode && (
+              <>
+                <StyledTextField
+                  fullWidth
+                  label="كلمة المرور"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                />
+                <StyledTextField
+                  fullWidth
+                  label="تأكيد كلمة المرور"
+                  name="password_confirmation"
+                  type="password"
+                  value={formData.password_confirmation}
+                  onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
+                  required
+                />
+              </>
+            )}
+            {isEditMode && (
+              <>
+                <StyledTextField
+                  fullWidth
+                  label="كلمة المرور الجديدة (اختياري)"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  helperText="اتركه فارغاً إذا لم ترد تغيير كلمة المرور"
+                />
+                {formData.password && (
+                  <StyledTextField
+                    fullWidth
+                    label="تأكيد كلمة المرور الجديدة"
+                    name="password_confirmation"
+                    type="password"
+                    value={formData.password_confirmation}
+                    onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })}
+                  />
+                )}
+              </>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => {
+              setAddEditDialogOpen(false);
+              setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                address: '',
+                password: '',
+                password_confirmation: '',
+              });
+              setIsEditMode(false);
+              setSelectedClient(null);
+            }}
+            sx={{ color: colors.textSecondary }}
+          >
+            إلغاء
+          </Button>
+          <StyledButton
+            onClick={handleSaveClient}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <CircularProgress size={24} sx={{ color: colors.black }} />
+            ) : (
+              isEditMode ? 'تحديث' : 'إضافة'
+            )}
+          </StyledButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="حذف العميل"
+        message={`هل أنت متأكد من حذف العميل "${selectedClient?.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`}
+        loading={actionLoading}
+      />
+
+      {/* Archive Confirmation */}
+      <ConfirmationDialog
+        open={archiveDialogOpen}
+        onClose={() => setArchiveDialogOpen(false)}
+        onConfirm={handleArchive}
+        title="أرشفة العميل"
+        message={`هل أنت متأكد من أرشفة العميل "${selectedClient?.name}"؟`}
+        loading={actionLoading}
+      />
+
+      {/* Restore Confirmation */}
+      <ConfirmationDialog
+        open={restoreDialogOpen}
+        onClose={() => setRestoreDialogOpen(false)}
+        onConfirm={handleRestore}
+        title="إلغاء أرشفة العميل"
+        message={`هل أنت متأكد من إلغاء أرشفة العميل "${selectedClient?.name}"؟`}
         loading={actionLoading}
       />
     </Box>

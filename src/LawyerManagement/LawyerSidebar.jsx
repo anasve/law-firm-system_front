@@ -17,6 +17,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import GavelIcon from '@mui/icons-material/Gavel';
 import ChatIcon from '@mui/icons-material/Chat';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
 import { colors } from '../AdminManagement/constants';
@@ -52,11 +53,19 @@ const menuItems = [
   { text: 'Consultations', icon: <QuestionAnswerIcon />, path: '/lawyer/consultations' },
   { text: 'Appointments', icon: <EventIcon />, path: '/lawyer/appointments' },
   { text: 'Chat', icon: <ChatIcon />, path: '/lawyer/chat' },
+  { text: 'Laws', icon: <DescriptionIcon />, path: '/lawyer/laws' },
   { text: 'Profile', icon: <AccountCircleIcon />, path: '/lawyer/profile' },
 ];
 
 export default function LawyerSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
+  const [lawsExpanded, setLawsExpanded] = useState(false);
+  const [laws, setLaws] = useState([]);
+  const [filteredLaws, setFilteredLaws] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lawsLoading, setLawsLoading] = useState(false);
+  const [selectedLaw, setSelectedLaw] = useState(null);
+  const [lawDialogOpen, setLawDialogOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 

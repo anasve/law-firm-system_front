@@ -49,6 +49,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Send as SendIcon,
+  VideoCall as VideoCallIcon,
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -85,16 +86,12 @@ const priorityIcons = {
 
 const channelLabels = {
   chat: 'Chat',
-  in_office: 'In Office',
-  call: 'Call',
-  appointment: 'Appointment',
+  meeting_link: 'Meeting Link',
 };
 
 const channelIcons = {
   chat: <ChatIcon sx={{ fontSize: 18 }} />,
-  in_office: <BusinessIcon sx={{ fontSize: 18 }} />,
-  call: <PhoneIcon sx={{ fontSize: 18 }} />,
-  appointment: <EventIcon sx={{ fontSize: 18 }} />,
+  meeting_link: <VideoCallIcon sx={{ fontSize: 18 }} />,
 };
 
 const FilterCard = styled(Paper)({

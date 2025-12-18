@@ -28,6 +28,7 @@ import {
   ProfilePage as ClientProfilePage,
   NewConsultationPage,
   NewAppointmentPage,
+  LawsPage as ClientLawsPage,
 } from "./ClientManagement/pages";
 
 // Lawyer Pages
@@ -38,6 +39,7 @@ import {
   AppointmentsPage as LawyerAppointmentsPage,
   ChatPage as LawyerChatPage,
   ProfilePage as LawyerProfilePage,
+  LawsPage as LawyerLawsPage,
 } from "./LawyerManagement/pages";
 
 // Employee Pages
@@ -80,6 +82,7 @@ function App() {
           <Route path="/client/appointments" element={<ClientAppointmentsPage />} />
           <Route path="/client/appointments/new" element={<NewAppointmentPage />} />
           <Route path="/client/chat" element={<ClientChatPage />} />
+          <Route path="/client/laws" element={<ClientLawsPage />} />
           <Route path="/client/profile" element={<ClientProfilePage />} />
         </Route>
 
@@ -91,6 +94,7 @@ function App() {
           <Route path="/lawyer/consultations" element={<LawyerConsultationsPage />} />
           <Route path="/lawyer/appointments" element={<LawyerAppointmentsPage />} />
           <Route path="/lawyer/chat" element={<LawyerChatPage />} />
+          <Route path="/lawyer/laws" element={<LawyerLawsPage />} />
           <Route path="/lawyer/profile" element={<LawyerProfilePage />} />
         </Route>
 

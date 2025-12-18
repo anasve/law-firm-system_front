@@ -97,8 +97,7 @@ export default function NewAppointmentPage() {
     lawyer_id: '',
     subject: '',
     description: '',
-    type: 'online',
-    meeting_link: '',
+    type: 'in_office',
     notes: '',
   });
 
@@ -553,7 +552,11 @@ export default function NewAppointmentPage() {
 
   const handleBack = () => {
     setError('');
-    setActiveStep((prevStep) => prevStep - 1);
+    if (activeStep > 0) {
+      setActiveStep((prevStep) => prevStep - 1);
+    } else {
+      navigate('/client/appointments');
+    }
   };
 
   const handleSlotSelect = (slot) => {
@@ -650,7 +653,7 @@ export default function NewAppointmentPage() {
         preferred_date: preferredDate,
         subject: formData.subject.trim(),
         description: formData.description.trim(),
-        type: formData.type || 'online',
+        type: formData.type || 'in_office',
       };
 
       // Validate numeric fields
@@ -667,25 +670,6 @@ export default function NewAppointmentPage() {
         return;
       }
 
-      // Add meeting_link only if type is online (required according to API documentation)
-      if (formData.type === 'online') {
-        if (!formData.meeting_link || !formData.meeting_link.trim()) {
-          setError('Meeting link is required for online appointments');
-          setLoading(false);
-          return;
-        }
-        
-        // Validate URL format
-        const meetingLink = formData.meeting_link.trim();
-        try {
-          new URL(meetingLink);
-          data.meeting_link = meetingLink;
-        } catch (e) {
-          setError('Meeting link must be a valid URL (e.g., https://meet.google.com/...)');
-          setLoading(false);
-          return;
-        }
-      }
 
       // Add notes if provided
       if (formData.notes && formData.notes.trim()) {
@@ -1340,8 +1324,9 @@ export default function NewAppointmentPage() {
                 {selectedLawyer && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PersonIcon sx={{ color: colors.gold, fontSize: 20 }} />
-                    <Typography variant="body1">
-                      <strong>Lawyer:</strong> {selectedLawyer.name}
+                    <Typography variant="body1" sx={{ color: alpha(colors.white, 0.9) }}>
+                      <Box component="span" sx={{ color: alpha(colors.white, 0.7), fontWeight: 600 }}>Lawyer: </Box>
+                      <Box component="span" sx={{ color: colors.gold, fontWeight: 600 }}>{selectedLawyer.name}</Box>
                     </Typography>
                   </Box>
                 )}
@@ -1349,19 +1334,25 @@ export default function NewAppointmentPage() {
                   <>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CalendarIcon sx={{ color: colors.gold, fontSize: 20 }} />
-                      <Typography variant="body1">
-                        <strong>Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                      <Typography variant="body1" sx={{ color: alpha(colors.white, 0.9) }}>
+                        <Box component="span" sx={{ color: alpha(colors.white, 0.7), fontWeight: 600 }}>Date: </Box>
+                        <Box component="span" sx={{ color: colors.gold, fontWeight: 600 }}>
+                          {new Date(selectedDate).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </Box>
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <TimeIcon sx={{ color: colors.gold, fontSize: 20 }} />
-                      <Typography variant="body1">
-                        <strong>Time:</strong> {selectedSlot.start_time} - {selectedSlot.end_time}
+                      <Typography variant="body1" sx={{ color: alpha(colors.white, 0.9) }}>
+                        <Box component="span" sx={{ color: alpha(colors.white, 0.7), fontWeight: 600 }}>Time: </Box>
+                        <Box component="span" sx={{ color: colors.gold, fontWeight: 600 }}>
+                          {selectedSlot.start_time} - {selectedSlot.end_time}
+                        </Box>
                       </Typography>
                     </Box>
                   </>
@@ -1394,53 +1385,6 @@ export default function NewAppointmentPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel sx={{ color: colors.textSecondary }}>Appointment Type</InputLabel>
-                  <Select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    sx={{
-                      color: colors.white,
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: alpha(colors.gold, 0.3),
-                      },
-                    }}
-                  >
-                    <MenuItem value="online">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <VideoCallIcon sx={{ fontSize: 20 }} />
-                        Online
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="in_office">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BusinessIcon sx={{ fontSize: 20 }} />
-                        In Office
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="phone">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PhoneIcon sx={{ fontSize: 20 }} />
-                        Phone
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {formData.type === 'online' && (
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <StyledTextField
-                    fullWidth
-                    label="Meeting Link"
-                    value={formData.meeting_link}
-                    onChange={(e) => setFormData({ ...formData, meeting_link: e.target.value })}
-                    placeholder="https://meet.google.com/xxx"
-                    helperText="This link will be used for the online meeting"
-                  />
-                </Grid>
-              )}
 
               <Grid size={{ xs: 12 }}>
                 <StyledTextField
@@ -1525,18 +1469,6 @@ export default function NewAppointmentPage() {
                   </Box>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {typeIcons[formData.type]}
-                  <Box>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                      Appointment Type
-                    </Typography>
-                    <Typography variant="body1" fontWeight="bold">
-                      {typeLabels[formData.type]}
-                    </Typography>
-                  </Box>
-                </Box>
-
                 <Divider sx={{ borderColor: alpha(colors.gold, 0.2) }} />
 
                 <Box>
@@ -1597,13 +1529,21 @@ export default function NewAppointmentPage() {
 
         {/* Navigation Buttons */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button
-            disabled={activeStep === 0}
+          <StyledButton 
+            variant="outlined"
             onClick={handleBack}
-            sx={{ color: colors.textSecondary }}
+            sx={{
+              color: alpha(colors.white, 0.9),
+              borderColor: alpha(colors.gold, 0.5),
+              '&:hover': {
+                color: colors.gold,
+                borderColor: colors.gold,
+                backgroundColor: alpha(colors.gold, 0.1),
+              },
+            }}
           >
             Previous
-          </Button>
+          </StyledButton>
           {activeStep < steps.length - 1 ? (
             <StyledButton onClick={handleNext}>
               Next

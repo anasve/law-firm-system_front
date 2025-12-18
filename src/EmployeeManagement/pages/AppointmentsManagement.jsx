@@ -251,12 +251,26 @@ export default function AppointmentsManagement() {
   const fetchLawyers = useCallback(async () => {
     try {
       const response = await lawyersService.getLawyers();
-      const data = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data?.data || response.data?.lawyers || []);
+      let data = [];
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response.data?.lawyers && Array.isArray(response.data.lawyers)) {
+        data = response.data.lawyers;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        data = response.data.items;
+      } else if (response.data?.results && Array.isArray(response.data.results)) {
+        data = response.data.results;
+      }
+      console.log('Fetched lawyers:', data);
       setLawyers(data);
     } catch (error) {
       console.error('Failed to fetch lawyers:', error);
+      // Don't set error state for 404 - just log and continue with empty list
+      if (error.response?.status !== 404) {
+        console.warn('Failed to load lawyers. Using empty list.');
+      }
       setLawyers([]);
     }
   }, []);
@@ -564,7 +578,14 @@ export default function AppointmentsManagement() {
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <CalendarIcon sx={{ fontSize: 18, color: colors.gold }} />
-                  <Typography variant="h6" fontWeight="bold">
+                  <Typography 
+                    variant="h6" 
+                    fontWeight={600}
+                    sx={{
+                      color: alpha(colors.white, 0.95),
+                      fontSize: '1.1rem',
+                    }}
+                  >
                     {appointmentDateTime
                       ? appointmentDate.toLocaleDateString('en-US', {
                           weekday: 'long',
@@ -584,7 +605,13 @@ export default function AppointmentsManagement() {
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <TimeIcon sx={{ fontSize: 18, color: colors.gold }} />
-                  <Typography variant="body1">
+                  <Typography 
+                    variant="body1"
+                    sx={{
+                      color: alpha(colors.white, 0.9),
+                      fontSize: '1rem',
+                    }}
+                  >
                     {appointmentDateTime 
                       ? appointmentDate.toLocaleTimeString('en-US', {
                           hour: '2-digit',
@@ -651,26 +678,57 @@ export default function AppointmentsManagement() {
             </Box>
 
             {appointment.lawyer && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <GavelIcon sx={{ fontSize: 18, color: colors.gold }} />
-                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                  Lawyer: <span style={{ color: colors.gold }}>{appointment.lawyer.name}</span>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <GavelIcon sx={{ fontSize: 20, color: colors.gold }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: alpha(colors.white, 0.95),
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Box component="span" sx={{ color: alpha(colors.white, 0.8), fontWeight: 400 }}>Lawyer: </Box>
+                  <Box component="span" sx={{ color: colors.gold, fontWeight: 600 }}>
+                    {appointment.lawyer.name || 'N/A'}
+                  </Box>
                 </Typography>
               </Box>
             )}
 
             {appointment.client && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <PersonIcon sx={{ fontSize: 18, color: colors.gold }} />
-                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                  Client: <span style={{ color: colors.gold }}>{appointment.client.name}</span>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <PersonIcon sx={{ fontSize: 20, color: colors.gold }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: alpha(colors.white, 0.95),
+                    fontSize: '0.9rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  <Box component="span" sx={{ color: alpha(colors.white, 0.8), fontWeight: 400 }}>Client: </Box>
+                  <Box component="span" sx={{ color: colors.gold, fontWeight: 600 }}>
+                    {appointment.client.name || 'N/A'}
+                  </Box>
                 </Typography>
               </Box>
             )}
 
             {appointment.subject && (
-              <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
-                <strong>Subject:</strong> {appointment.subject}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: alpha(colors.white, 0.85),
+                  mb: 1,
+                  fontSize: '0.875rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                <Box component="span" sx={{ fontWeight: 600, color: alpha(colors.white, 0.7) }}>
+                  Subject:{' '}
+                </Box>
+                {appointment.subject}
               </Typography>
             )}
 
@@ -797,7 +855,13 @@ export default function AppointmentsManagement() {
               <Typography variant="h5" sx={{ color: colors.gold, fontWeight: 'bold' }}>
                 {stat.value}
               </Typography>
-              <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: alpha(colors.white, 0.8),
+                  fontSize: '0.875rem',
+                }}
+              >
                 {stat.label}
               </Typography>
             </Paper>
@@ -809,21 +873,34 @@ export default function AppointmentsManagement() {
       <FilterCard>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <FilterListIcon sx={{ color: colors.gold, mr: 1 }} />
-          <Typography variant="h6" sx={{ color: colors.white }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: alpha(colors.white, 0.95),
+              fontWeight: 600,
+              fontSize: '1.1rem',
+            }}
+          >
             Filters & Search
           </Typography>
         </Box>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={12} md={4}>
             <StyledTextField
               fullWidth
               label="Search"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               placeholder="Search for client or lawyer..."
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                  minHeight: '56px',
+                },
+              }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={12} sm={6} md={2.5}>
             <StyledTextField
               fullWidth
               type="date"
@@ -831,18 +908,67 @@ export default function AppointmentsManagement() {
               value={filters.date}
               onChange={(e) => setFilters({ ...filters, date: e.target.value })}
               InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                  minHeight: '56px',
+                },
+              }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel sx={{ color: colors.textSecondary }}>Status</InputLabel>
+          <Grid item xs={12} sm={6} md={2.5}>
+            <FormControl fullWidth sx={{ minHeight: '56px' }}>
+              <InputLabel 
+                sx={{ 
+                  color: alpha(colors.white, 0.95), 
+                  fontWeight: 500,
+                  '&.Mui-focused': { color: colors.gold },
+                  fontSize: '1rem',
+                }}
+              >
+                Status
+              </InputLabel>
               <Select
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 sx={{
                   color: colors.white,
+                  fontSize: '1rem',
+                  minHeight: '56px',
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: alpha(colors.gold, 0.3),
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.5),
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.gold,
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: colors.gold,
+                  },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: colors.lightBlack,
+                      color: colors.white,
+                      border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                      '& .MuiMenuItem-root': {
+                        color: colors.white,
+                        fontSize: '1rem',
+                        padding: '12px 16px',
+                        '&:hover': {
+                          backgroundColor: alpha(colors.gold, 0.2),
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: alpha(colors.gold, 0.3),
+                          '&:hover': {
+                            backgroundColor: alpha(colors.gold, 0.4),
+                          },
+                        },
+                      },
+                    },
                   },
                 }}
               >
@@ -854,51 +980,209 @@ export default function AppointmentsManagement() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel sx={{ color: colors.textSecondary }}>Lawyer</InputLabel>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth sx={{ minHeight: '56px' }}>
+              <InputLabel 
+                id="lawyer-select-label"
+                shrink={true}
+                sx={{ 
+                  color: alpha(colors.white, 0.95), 
+                  fontWeight: 500,
+                  '&.Mui-focused': { color: colors.gold },
+                  fontSize: '1rem',
+                }}
+              >
+                Lawyer
+              </InputLabel>
               <Select
-                value={filters.lawyer_id}
+                labelId="lawyer-select-label"
+                value={filters.lawyer_id || ''}
                 onChange={(e) => setFilters({ ...filters, lawyer_id: e.target.value })}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected || selected === '') {
+                    return <span style={{ color: alpha(colors.white, 0.7) }}>All Lawyers</span>;
+                  }
+                  const lawyer = lawyers.find(l => l.id === selected || l.id.toString() === selected.toString());
+                  return <span>{lawyer?.name || `Lawyer #${selected}`}</span>;
+                }}
                 sx={{
                   color: colors.white,
+                  fontSize: '1rem',
+                  minHeight: '56px',
+                  '& .MuiSelect-select': {
+                    padding: '14px 14px 14px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  },
                   '& .MuiOutlinedInput-notchedOutline': {
                     borderColor: alpha(colors.gold, 0.3),
                   },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.5),
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.gold,
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: colors.gold,
+                  },
+                }}
+                inputProps={{
+                  'aria-label': 'Lawyer selection',
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: colors.lightBlack,
+                      color: colors.white,
+                      border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                      maxHeight: '400px',
+                      '& .MuiMenuItem-root': {
+                        color: colors.white,
+                        fontSize: '1rem',
+                        padding: '12px 16px',
+                        minHeight: '48px',
+                        lineHeight: '1.5',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        '&:hover': {
+                          backgroundColor: alpha(colors.gold, 0.2),
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: alpha(colors.gold, 0.3),
+                          '&:hover': {
+                            backgroundColor: alpha(colors.gold, 0.4),
+                          },
+                        },
+                        '&.Mui-disabled': {
+                          opacity: 0.5,
+                        },
+                      },
+                    },
+                  },
                 }}
               >
-                <MenuItem value="">All Lawyers</MenuItem>
-                {lawyers.map((lawyer) => (
-                  <MenuItem key={lawyer.id} value={lawyer.id}>
-                    {lawyer.name}
+                <MenuItem value="" aria-label="All Lawyers">
+                  <em style={{ color: alpha(colors.white, 0.7) }}>All Lawyers</em>
+                </MenuItem>
+                {lawyers.length > 0 ? (
+                  lawyers.map((lawyer) => (
+                    <MenuItem key={lawyer.id} value={lawyer.id}>
+                      {lawyer.name || `Lawyer #${lawyer.id}`}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    <span style={{ color: alpha(colors.white, 0.5) }}>Loading lawyers...</span>
                   </MenuItem>
-                ))}
+                )}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth sx={{ minHeight: '56px' }}>
+              <InputLabel 
+                id="client-select-label"
+                shrink={true}
+                sx={{ 
+                  color: alpha(colors.white, 0.95), 
+                  fontWeight: 500,
+                  '&.Mui-focused': { color: colors.gold },
+                  fontSize: '1rem',
+                }}
+              >
+                Client
+              </InputLabel>
+              <Select
+                labelId="client-select-label"
+                value={filters.client_id || ''}
+                onChange={(e) => setFilters({ ...filters, client_id: e.target.value })}
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected || selected === '') {
+                    return <span style={{ color: alpha(colors.white, 0.7) }}>All Clients</span>;
+                  }
+                  const client = clients.find(c => c.id === selected || c.id.toString() === selected.toString());
+                  return <span>{client?.name || `Client #${selected}`}</span>;
+                }}
+                sx={{
+                  color: colors.white,
+                  fontSize: '1rem',
+                  minHeight: '56px',
+                  '& .MuiSelect-select': {
+                    padding: '14px 14px 14px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.3),
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: alpha(colors.gold, 0.5),
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: colors.gold,
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: colors.gold,
+                  },
+                }}
+                inputProps={{
+                  'aria-label': 'Client selection',
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: colors.lightBlack,
+                      color: colors.white,
+                      border: `1px solid ${alpha(colors.gold, 0.3)}`,
+                      maxHeight: '400px',
+                      '& .MuiMenuItem-root': {
+                        color: colors.white,
+                        fontSize: '1rem',
+                        padding: '12px 16px',
+                        minHeight: '48px',
+                        lineHeight: '1.5',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        '&:hover': {
+                          backgroundColor: alpha(colors.gold, 0.2),
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: alpha(colors.gold, 0.3),
+                          '&:hover': {
+                            backgroundColor: alpha(colors.gold, 0.4),
+                          },
+                        },
+                        '&.Mui-disabled': {
+                          opacity: 0.5,
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                <MenuItem value="" aria-label="All Clients">
+                  <em style={{ color: alpha(colors.white, 0.7) }}>All Clients</em>
+                </MenuItem>
+                {clients.length > 0 ? (
+                  clients.map((client) => (
+                    <MenuItem key={client.id} value={client.id}>
+                      {client.name || `Client #${client.id}`}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>
+                    <span style={{ color: alpha(colors.white, 0.5) }}>Loading clients...</span>
+                  </MenuItem>
+                )}
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel sx={{ color: colors.textSecondary }}>Client</InputLabel>
-              <Select
-                value={filters.client_id}
-                onChange={(e) => setFilters({ ...filters, client_id: e.target.value })}
-                sx={{
-                  color: colors.white,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: alpha(colors.gold, 0.3),
-                  },
-                }}
-              >
-                <MenuItem value="">All Clients</MenuItem>
-                {clients.map((client) => (
-                  <MenuItem key={client.id} value={client.id}>
-                    {client.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={1}>
             <Button
               fullWidth
               variant="outlined"
@@ -906,8 +1190,16 @@ export default function AppointmentsManagement() {
               sx={{
                 color: colors.gold,
                 borderColor: colors.gold,
-                '&:hover': { borderColor: colors.darkGold, backgroundColor: alpha(colors.gold, 0.1) },
-                height: '56px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                minHeight: '56px',
+                '&:hover': { 
+                  borderColor: colors.darkGold, 
+                  backgroundColor: alpha(colors.gold, 0.1),
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 4px 8px ${alpha(colors.gold, 0.3)}`,
+                },
+                transition: 'all 0.3s ease',
               }}
             >
               Reset
@@ -992,7 +1284,14 @@ export default function AppointmentsManagement() {
                 }}
               >
                 <Typography variant="h6">No Appointments</Typography>
-                <Typography variant="body2" sx={{ color: colors.textSecondary, mt: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: alpha(colors.white, 0.8),
+                    mt: 1,
+                    fontSize: '0.875rem',
+                  }}
+                >
                   No appointments match the specified criteria
                 </Typography>
               </Paper>
@@ -1027,12 +1326,25 @@ export default function AppointmentsManagement() {
             <Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: alpha(colors.white, 0.75),
+                      mb: 0.5,
+                      fontSize: '0.875rem',
+                    }}
+                  >
                     Date & Time
                   </Typography>
                   <Box sx={{ mb: 2 }}>
                     {selectedAppointment.datetime ? (
-                      <Typography variant="body1" sx={{ color: colors.white }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: alpha(colors.white, 0.9),
+                          fontSize: '1rem',
+                        }}
+                      >
                         {new Date(selectedAppointment.datetime).toLocaleString('en-US', {
                           weekday: 'long',
                           year: 'numeric',
@@ -1045,16 +1357,23 @@ export default function AppointmentsManagement() {
                       </Typography>
                     ) : selectedAppointment.preferred_date || selectedAppointment.preferred_time ? (
                       <Box>
-                        <Typography variant="body1" sx={{ color: colors.white, mb: 0.5 }}>
-                          {selectedAppointment.preferred_date 
-                            ? new Date(selectedAppointment.preferred_date).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })
-                            : 'Date: TBD'}
-                        </Typography>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: alpha(colors.white, 0.9),
+                          mb: 0.5,
+                          fontSize: '1rem',
+                        }}
+                      >
+                        {selectedAppointment.preferred_date 
+                          ? new Date(selectedAppointment.preferred_date).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })
+                          : 'Date: TBD'}
+                      </Typography>
                         {selectedAppointment.preferred_time && (
                           <Typography variant="body2" sx={{ color: colors.gold }}>
                             Preferred Time: {selectedAppointment.preferred_time}
@@ -1072,14 +1391,27 @@ export default function AppointmentsManagement() {
                         />
                       </Box>
                     ) : (
-                      <Typography variant="body1" sx={{ color: colors.textSecondary }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: alpha(colors.white, 0.8),
+                          fontSize: '1rem',
+                        }}
+                      >
                         Date & Time: TBD
                       </Typography>
                     )}
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: alpha(colors.white, 0.75),
+                      mb: 0.5,
+                      fontSize: '0.875rem',
+                    }}
+                  >
                     Status
                   </Typography>
                   <Chip
@@ -1090,27 +1422,66 @@ export default function AppointmentsManagement() {
                 </Grid>
                 {selectedAppointment.lawyer && (
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: colors.gold,
+                        mb: 0.5,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                      }}
+                    >
                       Lawyer
                     </Typography>
-                    <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
-                      {selectedAppointment.lawyer.name}
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: alpha(colors.white, 0.95),
+                        mb: 2,
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {selectedAppointment.lawyer.name || 'N/A'}
                     </Typography>
                   </Grid>
                 )}
                 {selectedAppointment.client && (
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: colors.gold,
+                        mb: 0.5,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                      }}
+                    >
                       Client
                     </Typography>
-                    <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
-                      {selectedAppointment.client.name}
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: alpha(colors.white, 0.95),
+                        mb: 2,
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {selectedAppointment.client.name || 'N/A'}
                     </Typography>
                   </Grid>
                 )}
                 {selectedAppointment.subject && (
                   <Grid item xs={12}>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: alpha(colors.white, 0.75),
+                        mb: 0.5,
+                        fontSize: '0.875rem',
+                      }}
+                    >
                       Subject
                     </Typography>
                     <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
@@ -1120,10 +1491,25 @@ export default function AppointmentsManagement() {
                 )}
                 {selectedAppointment.description && (
                   <Grid item xs={12}>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: alpha(colors.white, 0.75),
+                        mb: 0.5,
+                        fontSize: '0.875rem',
+                      }}
+                    >
                       Description
                     </Typography>
-                    <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        color: alpha(colors.white, 0.9),
+                        mb: 2,
+                        fontSize: '1rem',
+                        lineHeight: 1.6,
+                      }}
+                    >
                       {selectedAppointment.description}
                     </Typography>
                   </Grid>

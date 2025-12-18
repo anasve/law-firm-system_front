@@ -30,17 +30,9 @@ export const consultationsService = {
       formData.append('specialization_id', data.specialization_id.toString());
     }
     
-    // Add appointment fields only if preferred_channel is 'appointment'
-    if (data.preferred_channel === 'appointment') {
-      if (data.appointment_type) {
-        formData.append('appointment_type', data.appointment_type);
-      }
-      if (data.appointment_meeting_link && data.appointment_meeting_link.trim()) {
-        formData.append('appointment_meeting_link', data.appointment_meeting_link.trim());
-      }
-      if (data.appointment_notes && data.appointment_notes.trim()) {
-        formData.append('appointment_notes', data.appointment_notes.trim());
-      }
+    // Add meeting_link if preferred_channel is 'meeting_link'
+    if (data.preferred_channel === 'meeting_link' && data.meeting_link && data.meeting_link.trim()) {
+      formData.append('meeting_link', data.meeting_link.trim());
     }
     
     // Add attachments if they exist

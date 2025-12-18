@@ -36,6 +36,8 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
   Person as PersonIcon,
+  VideoCall as VideoCallIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { WelcomeBanner, StyledButton, StyledTextField } from '../../AdminManagement/components/StyledComponents';
@@ -80,16 +82,12 @@ const priorityLabels = {
 
 const channelLabels = {
   chat: 'Chat',
-  in_office: 'In Office',
-  call: 'Call',
-  appointment: 'Appointment',
+  meeting_link: 'Meeting Link',
 };
 
 const channelIcons = {
   chat: <ChatIcon />,
-  in_office: <BusinessIcon />,
-  call: <PhoneIcon />,
-  appointment: <EventIcon />,
+  meeting_link: <VideoCallIcon />,
 };
 
 const typeLabels = {
@@ -118,9 +116,7 @@ export default function NewConsultationPage() {
     description: '',
     priority: 'normal',
     preferred_channel: 'chat',
-    appointment_type: 'online',
-    appointment_meeting_link: '',
-    appointment_notes: '',
+    meeting_link: '',
   });
   const [attachments, setAttachments] = useState([]);
 
@@ -250,6 +246,12 @@ export default function NewConsultationPage() {
       return;
     }
 
+    if (formData.preferred_channel === 'meeting_link' && (!formData.meeting_link || !formData.meeting_link.trim())) {
+      setError('Meeting link is required when Meeting Link is selected as preferred channel');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Prepare data - only include valid fields
       const data = {
@@ -279,17 +281,9 @@ export default function NewConsultationPage() {
         }
       }
 
-      // Only add appointment fields if preferred_channel is 'appointment'
-      if (formData.preferred_channel === 'appointment') {
-        if (formData.appointment_type) {
-          data.appointment_type = formData.appointment_type;
-        }
-        if (formData.appointment_meeting_link && formData.appointment_meeting_link.trim()) {
-          data.appointment_meeting_link = formData.appointment_meeting_link.trim();
-        }
-        if (formData.appointment_notes && formData.appointment_notes.trim()) {
-          data.appointment_notes = formData.appointment_notes.trim();
-        }
+      // Add meeting_link if preferred_channel is meeting_link
+      if (formData.preferred_channel === 'meeting_link' && formData.meeting_link && formData.meeting_link.trim()) {
+        data.meeting_link = formData.meeting_link.trim();
       }
 
       // Add attachments if there are any
@@ -625,27 +619,28 @@ export default function NewConsultationPage() {
                         Chat
                       </Box>
                     </MenuItem>
-                    <MenuItem value="in_office">
+                    <MenuItem value="meeting_link">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
-                        <BusinessIcon sx={{ fontSize: 18, color: colors.gold }} />
-                        In Office
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="call">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
-                        <PhoneIcon sx={{ fontSize: 18, color: colors.gold }} />
-                        Call
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="appointment">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: colors.white }}>
-                        <EventIcon sx={{ fontSize: 18, color: colors.gold }} />
-                        Appointment
+                        <VideoCallIcon sx={{ fontSize: 18, color: colors.gold }} />
+                        Meeting Link
                       </Box>
                     </MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
+
+              {formData.preferred_channel === 'meeting_link' && (
+                <Grid item xs={12} md={6}>
+                  <StyledTextField
+                    fullWidth
+                    label="Meeting Link"
+                    value={formData.meeting_link}
+                    onChange={(e) => setFormData({ ...formData, meeting_link: e.target.value })}
+                    placeholder="https://meet.google.com/xxx or https://zoom.us/j/xxx"
+                    helperText="Enter the meeting link for your consultation"
+                  />
+                </Grid>
+              )}
             </Grid>
           </Box>
         )}
@@ -1017,105 +1012,6 @@ export default function NewConsultationPage() {
                 )}
               </Grid>
 
-              {formData.preferred_channel === 'appointment' && (
-                <>
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2, borderColor: alpha(colors.gold, 0.2) }} />
-                    <Typography variant="h6" sx={{ mb: 2, color: colors.gold }}>
-                      Appointment Details
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth>
-                      <InputLabel 
-                        sx={{ 
-                          color: alpha(colors.white, 0.9),
-                          fontWeight: 500,
-                          '&.Mui-focused': {
-                            color: colors.gold,
-                          },
-                        }}
-                      >
-                        Appointment Type
-                      </InputLabel>
-                      <Select
-                        value={formData.appointment_type}
-                        onChange={(e) => setFormData({ ...formData, appointment_type: e.target.value })}
-                        sx={{
-                          color: colors.white,
-                          backgroundColor: 'rgba(0,0,0,0.2)',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: alpha(colors.gold, 0.3),
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: alpha(colors.gold, 0.7),
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: colors.gold,
-                          },
-                          '& .MuiSvgIcon-root': {
-                            color: colors.white,
-                          },
-                        }}
-                        MenuProps={{
-                          PaperProps: {
-                            sx: {
-                              backgroundColor: colors.lightBlack,
-                              color: colors.white,
-                              border: `1px solid ${alpha(colors.gold, 0.3)}`,
-                              '& .MuiMenuItem-root': {
-                                color: colors.white,
-                                '&:hover': {
-                                  backgroundColor: alpha(colors.gold, 0.2),
-                                },
-                                '&.Mui-selected': {
-                                  backgroundColor: alpha(colors.gold, 0.3),
-                                  '&:hover': {
-                                    backgroundColor: alpha(colors.gold, 0.4),
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        }}
-                      >
-                        <MenuItem value="online">
-                          <Box sx={{ color: colors.white }}>Online</Box>
-                        </MenuItem>
-                        <MenuItem value="in_office">
-                          <Box sx={{ color: colors.white }}>In Office</Box>
-                        </MenuItem>
-                        <MenuItem value="phone">
-                          <Box sx={{ color: colors.white }}>Phone</Box>
-                        </MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  {formData.appointment_type === 'online' && (
-                    <Grid item xs={12} md={6}>
-                      <StyledTextField
-                        fullWidth
-                        label="Meeting Link"
-                        value={formData.appointment_meeting_link}
-                        onChange={(e) => setFormData({ ...formData, appointment_meeting_link: e.target.value })}
-                        placeholder="https://meet.google.com/xxx"
-                        helperText="Link for online meeting"
-                      />
-                    </Grid>
-                  )}
-                  <Grid item xs={12}>
-                    <StyledTextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      label="Appointment Notes (Optional)"
-                      value={formData.appointment_notes}
-                      onChange={(e) => setFormData({ ...formData, appointment_notes: e.target.value })}
-                      placeholder="Any additional notes for the appointment..."
-                    />
-                  </Grid>
-                </>
-              )}
 
               <Grid item xs={12}>
                 <Typography 
@@ -1372,47 +1268,29 @@ export default function NewConsultationPage() {
                   </>
                 )}
 
-                {formData.preferred_channel === 'appointment' && (
+                {formData.preferred_channel === 'meeting_link' && formData.meeting_link && (
                   <>
                     <Divider sx={{ borderColor: alpha(colors.gold, 0.2) }} />
                     <Box>
                       <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                        Appointment Type
+                        Meeting Link
                       </Typography>
-                      <Typography variant="body1" sx={{ color: colors.white }}>
-                        {typeLabels[formData.appointment_type]}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: colors.gold,
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          wordBreak: 'break-all',
+                        }}
+                        onClick={() => window.open(formData.meeting_link, '_blank')}
+                      >
+                        {formData.meeting_link}
                       </Typography>
-                      {formData.appointment_meeting_link && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                            Meeting Link
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: colors.gold,
-                              textDecoration: 'underline',
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => window.open(formData.appointment_meeting_link, '_blank')}
-                          >
-                            {formData.appointment_meeting_link}
-                          </Typography>
-                        </Box>
-                      )}
-                      {formData.appointment_notes && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                            Appointment Notes
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: colors.white }}>
-                            {formData.appointment_notes}
-                          </Typography>
-                        </Box>
-                      )}
                     </Box>
                   </>
                 )}
+
 
                 {attachments.length > 0 && (
                   <>

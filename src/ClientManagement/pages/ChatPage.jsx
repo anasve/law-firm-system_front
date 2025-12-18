@@ -77,6 +77,10 @@ const StyledTextField = styled(TextField)({
   },
   '& .MuiInputBase-input': {
     color: colors.white,
+    '&::placeholder': {
+      color: alpha(colors.white, 0.6),
+      opacity: 1,
+    },
   },
 });
 
@@ -84,12 +88,15 @@ const ConsultationItem = styled(Paper)({
   padding: '16px',
   marginBottom: '12px',
   backgroundColor: colors.lightBlack,
-  border: `1px solid ${alpha(colors.gold, 0.1)}`,
+  borderRadius: '12px',
+  border: `1px solid ${alpha(colors.gold, 0.15)}`,
   cursor: 'pointer',
   transition: 'all 0.3s ease',
   '&:hover': {
     borderColor: colors.gold,
+    backgroundColor: alpha(colors.gold, 0.05),
     transform: 'translateY(-2px)',
+    boxShadow: `0 4px 12px ${alpha(colors.black, 0.3)}`,
   },
 });
 
@@ -212,8 +219,17 @@ export default function ChatPage() {
       <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
         {/* Consultations List */}
         <Box sx={{ width: '300px', flexShrink: 0 }}>
-          <Paper sx={{ p: 2, backgroundColor: colors.lightBlack, mb: 2 }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+          <Paper sx={{ p: 2, backgroundColor: colors.lightBlack, mb: 2, borderRadius: '12px' }}>
+            <Typography 
+              variant="h6" 
+              fontWeight={600}
+              sx={{ 
+                mb: 2,
+                color: colors.white,
+                fontSize: '1.1rem',
+                letterSpacing: '0.5px',
+              }}
+            >
               Active Consultations
             </Typography>
             {loading ? (
@@ -235,15 +251,40 @@ export default function ChatPage() {
                         selectedConsultation?.id === consultation.id ? alpha(colors.gold, 0.2) : colors.lightBlack,
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Avatar sx={{ bgcolor: colors.gold, width: 40, height: 40 }}>
-                        {consultation.lawyer?.name?.[0] || 'L'}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                      <Avatar sx={{ bgcolor: colors.gold, width: 44, height: 44 }}>
+                        <Typography sx={{ color: colors.black, fontWeight: 600, fontSize: '1rem' }}>
+                          {consultation.lawyer?.name?.[0]?.toUpperCase() || 'L'}
+                        </Typography>
                       </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography 
+                          variant="subtitle2" 
+                          fontWeight={600}
+                          sx={{ 
+                            color: alpha(colors.white, 0.95),
+                            fontSize: '0.9rem',
+                            mb: 0.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {consultation.lawyer?.name || 'Lawyer'}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: alpha(colors.white, 0.85),
+                            fontSize: '0.8rem',
+                            fontWeight: 400,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            display: 'block',
+                            lineHeight: 1.4,
+                          }}
+                        >
                           {consultation.subject || 'No subject'}
                         </Typography>
                       </Box>
@@ -252,9 +293,16 @@ export default function ChatPage() {
                       label={consultation.status}
                       size="small"
                       sx={{
-                        bgcolor: alpha(colors.gold, 0.2),
-                        color: colors.gold,
+                        bgcolor: colors.gold,
+                        color: colors.black,
                         fontSize: '0.7rem',
+                        fontWeight: 600,
+                        textTransform: 'capitalize',
+                        height: '22px',
+                        '& .MuiChip-label': {
+                          px: 1.5,
+                          color: colors.black,
+                        },
                       }}
                     />
                   </ConsultationItem>
@@ -268,19 +316,40 @@ export default function ChatPage() {
         <Box sx={{ flex: 1 }}>
           {selectedConsultation ? (
             <ChatContainer>
-              <Box sx={{ p: 2, borderBottom: `1px solid ${alpha(colors.gold, 0.1)}` }}>
-                <Typography variant="h6" fontWeight="bold">
+              <Box sx={{ p: 2, borderBottom: `1px solid ${alpha(colors.gold, 0.1)}`, backgroundColor: alpha(colors.lightBlack, 0.5) }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={600}
+                  sx={{
+                    color: alpha(colors.white, 0.95),
+                    fontSize: '1.1rem',
+                    mb: 0.5,
+                  }}
+                >
                   {selectedConsultation.lawyer?.name || 'Lawyer'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: alpha(colors.white, 0.8),
+                    fontSize: '0.875rem',
+                  }}
+                >
                   {selectedConsultation.subject || 'No subject'}
                 </Typography>
               </Box>
 
               <MessagesList>
                 {messages.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4, color: colors.textSecondary }}>
-                    <Typography>No messages yet. Start the conversation!</Typography>
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography 
+                      sx={{ 
+                        color: alpha(colors.white, 0.7),
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      No messages yet. Start the conversation!
+                    </Typography>
                   </Box>
                 ) : (
                   messages.map((message) => (
