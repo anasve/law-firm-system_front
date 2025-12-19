@@ -86,8 +86,15 @@ export default function LawsPage() {
       setLaws(lawsData);
       setFilteredLaws(lawsData);
     } catch (error) {
-      console.error('Failed to fetch laws:', error);
-      console.error('Error response:', error.response);
+      console.error('Failed to fetch laws:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        response: error.response?.data,
+      });
       setLaws([]);
       setFilteredLaws([]);
     } finally {

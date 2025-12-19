@@ -101,8 +101,16 @@ export default function NotificationBell() {
         setUnreadCount(localCount);
         setAllMarkedAsRead(localCount === 0);
       } else {
-        // Only log non-404 errors
-        console.error('Failed to fetch unread count:', error);
+        // Log detailed error information
+        console.error('Failed to fetch unread count:', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          response: error.response?.data,
+        });
         // Fallback to local count
         const localCount = notifications.filter(n => !n.read_at).length;
         setUnreadCount(localCount);
@@ -157,8 +165,16 @@ export default function NotificationBell() {
         setNotifications([]);
         setUnreadCount(0);
       } else {
-        // Only log non-404 errors
-        console.error('Failed to fetch notifications:', error);
+        // Log detailed error information
+        console.error('Failed to fetch notifications:', {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          response: error.response?.data,
+        });
         setNotifications([]);
         setUnreadCount(0);
       }

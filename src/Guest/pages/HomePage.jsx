@@ -601,14 +601,32 @@ export default function HomePage() {
           >
             سجل الآن واحصل على استشارة من أفضل المحامين
           </Typography>
-          <StyledButton
-            variant="contained"
-            size="large"
-            endIcon={<ArrowForwardIcon />}
-            onClick={handleRequestConsultation}
-          >
-            إنشاء حساب الآن
-          </StyledButton>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <StyledButton
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              onClick={handleRequestConsultation}
+            >
+              إنشاء حساب الآن
+            </StyledButton>
+            <Button
+              variant="outlined"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => navigate('/job-application')}
+              sx={{
+                color: colors.gold,
+                borderColor: colors.gold,
+                '&:hover': {
+                  borderColor: colors.gold,
+                  backgroundColor: alpha(colors.gold, 0.1),
+                },
+              }}
+            >
+              Apply for Job
+            </Button>
+          </Box>
         </Container>
       </Box>
 

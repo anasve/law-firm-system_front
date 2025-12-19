@@ -33,10 +33,28 @@ api.interceptors.request.use(
 // Track if we're already redirecting to avoid multiple redirects
 let isRedirecting = false;
 
-// Add response interceptor to handle 401 errors
+// Add response interceptor to handle 401 errors and log network errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log network errors with more details
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      console.error('Network Error - API Server may be down:', {
+        message: error.message,
+        code: error.code,
+        baseURL: error.config?.baseURL,
+        url: error.config?.url,
+        fullURL: `${error.config?.baseURL}${error.config?.url}`,
+        hint: 'Make sure the Laravel backend server is running on http://localhost:8000',
+      });
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('Request Timeout:', {
+        message: error.message,
+        timeout: error.config?.timeout,
+        url: error.config?.url,
+      });
+    }
+    
     if (error.response?.status === 401) {
       // Unauthorized - token expired or invalid
       const currentPath = window.location.pathname;

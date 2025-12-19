@@ -12,5 +12,12 @@ export const guestService = {
   // Specializations
   getSpecializations: (params = {}) => api.get('/specializations', { params }),
   getSpecialization: (id) => api.get(`/specializations/${id}`),
+
+  // Job Applications
+  submitJobApplication: (formData) => api.post('/job-applications', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
 

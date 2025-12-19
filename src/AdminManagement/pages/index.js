@@ -4,4 +4,5 @@ export { default as LawsManagement } from './LawsManagement';
 export { default as SpecializationsManagement } from './SpecializationsManagement';
 export { default as ProfileEdit } from './ProfileEdit';
 export { default as AdminDashboardHome } from './AdminDashboardHome';
+export { default as FixedPricesManagementPage } from './FixedPricesManagementPage';
 

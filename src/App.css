@@ -3,6 +3,57 @@ body {
   font-family: "Tajawal", "Cairo", Arial, sans-serif;
 }
 
+/* Custom Scrollbar Styles */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #D4AF37 0%, #B8941F 100%);
+  border-radius: 10px;
+  border: 2px solid #1a1a1a;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #E5C158 0%, #D4AF37 100%);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #B8941F 0%, #9A7A17 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: #1a1a1a;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #1a1a1a;
+}
+
+/* Dark theme scrollbar for light backgrounds */
+.light-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #D4AF37 0%, #B8941F 100%);
+  border: 2px solid #f0f0f0;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #E5C158 0%, #D4AF37 100%);
+}
+
 /* السايدبار */
 .lawyer-sidebar, .sidebar, .sidebar-root {
   background: #fff;

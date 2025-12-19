@@ -18,6 +18,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
 import DescriptionIcon from '@mui/icons-material/Description';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
 import { colors } from '../AdminManagement/constants';
@@ -54,6 +55,7 @@ const menuItems = [
   { text: 'Appointments', icon: <EventIcon />, path: '/client/appointments' },
   { text: 'Chat', icon: <ChatIcon />, path: '/client/chat' },
   { text: 'Laws', icon: <DescriptionIcon />, path: '/client/laws' },
+  { text: 'Fixed Prices', icon: <PriceCheckIcon />, path: '/client/fixed-prices' },
   { text: 'Profile', icon: <AccountCircleIcon />, path: '/client/profile' },
 ];
 
@@ -120,7 +122,28 @@ export default function ClientSidebar() {
         <NotificationBell />
       </Box>
 
-      <List component="nav" sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <List 
+        component="nav" 
+        sx={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          minHeight: 0,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: `linear-gradient(180deg, ${colors.gold} 0%, ${alpha(colors.gold, 0.7)} 100%)`,
+            borderRadius: '10px',
+            border: `2px solid ${colors.black}`,
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: colors.gold,
+          },
+        }}
+      >
         {menuItems.map((item) => (
           <StyledListItemButton
             key={item.text}

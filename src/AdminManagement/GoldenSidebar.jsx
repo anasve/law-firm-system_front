@@ -18,6 +18,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ClassIcon from '@mui/icons-material/Class';
+import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
 import { colors } from './constants';
@@ -52,6 +54,7 @@ const menuItems = [
   { text: 'Home', icon: <PieChartIcon />, path: '/dashboard' },
   { text: 'Lawyers', icon: <GavelIcon />, path: '/lawyers' },
   { text: 'Employees', icon: <BusinessCenterOutlinedIcon />, path: '/employees' },
+  { text: 'Job Applications', icon: <WorkOutlineIcon />, path: '/job-applications' },
   { text: 'Laws Management', icon: <GavelIcon />, path: '/laws-management' },
   { text: 'Specializations', icon: <ClassIcon />, path: '/specializations' },
   { text: 'Edit Profile', icon: <AccountCircleIcon />, path: '/profile-edit' },
@@ -106,6 +109,20 @@ export default function GoldenSidebar() {
         left: 0,
         top: 0,
         overflowY: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: `linear-gradient(180deg, ${colors.gold} 0%, ${alpha(colors.gold, 0.7)} 100%)`,
+          borderRadius: '10px',
+          border: `2px solid ${colors.black}`,
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: colors.gold,
+        },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2, flexShrink: 0 }}>
@@ -120,7 +137,28 @@ export default function GoldenSidebar() {
         <NotificationBell />
       </Box>
 
-      <List component="nav" sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <List 
+        component="nav" 
+        sx={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          minHeight: 0,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: `linear-gradient(180deg, ${colors.gold} 0%, ${alpha(colors.gold, 0.7)} 100%)`,
+            borderRadius: '10px',
+            border: `2px solid ${colors.black}`,
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: colors.gold,
+          },
+        }}
+      >
         {menuItems.map((item) => (
           <StyledListItemButton
             key={item.text}

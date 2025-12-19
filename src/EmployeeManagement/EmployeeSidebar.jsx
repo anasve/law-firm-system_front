@@ -16,6 +16,7 @@ import EventIcon from '@mui/icons-material/Event';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
 import { colors } from '../AdminManagement/constants';
@@ -50,6 +51,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <PieChartIcon />, path: '/employee/dashboard' },
   { text: 'Clients', icon: <PeopleIcon />, path: '/employee/clients' },
   { text: 'Appointments', icon: <EventIcon />, path: '/employee/appointments' },
+  { text: 'Fixed Prices', icon: <PriceCheckIcon />, path: '/employee/fixed-prices' },
   { text: 'Profile', icon: <AccountCircleIcon />, path: '/employee/profile' },
 ];
 
@@ -102,6 +104,20 @@ export default function EmployeeSidebar() {
         left: 0,
         top: 0,
         overflowY: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: `linear-gradient(180deg, ${colors.gold} 0%, ${alpha(colors.gold, 0.7)} 100%)`,
+          borderRadius: '10px',
+          border: `2px solid ${colors.black}`,
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: colors.gold,
+        },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2, flexShrink: 0 }}>
@@ -116,7 +132,28 @@ export default function EmployeeSidebar() {
         <NotificationBell />
       </Box>
 
-      <List component="nav" sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <List 
+        component="nav" 
+        sx={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          minHeight: 0,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: `linear-gradient(180deg, ${colors.gold} 0%, ${alpha(colors.gold, 0.7)} 100%)`,
+            borderRadius: '10px',
+            border: `2px solid ${colors.black}`,
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: colors.gold,
+          },
+        }}
+      >
         {menuItems.map((item) => (
           <StyledListItemButton
             key={item.text}

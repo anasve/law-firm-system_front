@@ -6,4 +6,5 @@ export { default as ProfilePage } from './ProfilePage';
 export { default as NewConsultationPage } from './NewConsultationPage';
 export { default as NewAppointmentPage } from './NewAppointmentPage';
 export { default as LawsPage } from './LawsPage';
+export { default as FixedPricesPage } from './FixedPricesPage';
 

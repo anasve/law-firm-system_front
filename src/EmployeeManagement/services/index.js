@@ -5,4 +5,5 @@ export * from './appointmentsService';
 export * from './profileService';
 export * from './notificationsService';
 export * from './lawyersService';
+export * from './financialService';
 

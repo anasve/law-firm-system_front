@@ -8,7 +8,7 @@ import { LawyerLayout } from "./LawyerManagement/layouts";
 import { EmployeeLayout } from "./EmployeeManagement/layouts";
 
 // Guest Pages
-import { Login, Register, HomePage } from "./Guest/pages";
+import { Login, Register, HomePage, JobApplicationPage } from "./Guest/pages";
 
 // Admin Pages
 import LoginAdmin from "./AdminManagement/LoginAdmin";
@@ -18,6 +18,7 @@ import ProfileEdit from "./AdminManagement/pages/ProfileEdit";
 import AdminDashboardHome from "./AdminManagement/pages/AdminDashboardHome";
 import LawsManagement from "./AdminManagement/pages/LawsManagement";
 import SpecializationsManagement from "./AdminManagement/pages/SpecializationsManagement";
+import JobApplicationsManagement from "./AdminManagement/pages/JobApplicationsManagement";
 
 // Client Pages
 import {
@@ -29,6 +30,7 @@ import {
   NewConsultationPage,
   NewAppointmentPage,
   LawsPage as ClientLawsPage,
+  FixedPricesPage as ClientFixedPricesPage,
 } from "./ClientManagement/pages";
 
 // Lawyer Pages
@@ -49,6 +51,7 @@ import {
   ClientsManagement,
   AppointmentsManagement,
   ProfilePage as EmployeeProfilePage,
+  FixedPricesManagementPage as EmployeeFixedPricesManagementPage,
 } from "./EmployeeManagement/pages";
 
 import "./App.css";
@@ -61,9 +64,11 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/job-application" element={<JobApplicationPage />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<LoginAdmin />} />
+        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
         <Route element={<AdminLayout />}>
           <Route path="/dashboard" element={<AdminDashboardHome />} />
           <Route path="/lawyers" element={<LawyersManagement />} />
@@ -71,6 +76,7 @@ function App() {
           <Route path="/profile-edit" element={<ProfileEdit />} />
           <Route path="/laws-management" element={<LawsManagement />} />
           <Route path="/specializations" element={<SpecializationsManagement />} />
+          <Route path="/job-applications" element={<JobApplicationsManagement />} />
         </Route>
 
         {/* Client Routes */}
@@ -83,6 +89,7 @@ function App() {
           <Route path="/client/appointments/new" element={<NewAppointmentPage />} />
           <Route path="/client/chat" element={<ClientChatPage />} />
           <Route path="/client/laws" element={<ClientLawsPage />} />
+          <Route path="/client/fixed-prices" element={<ClientFixedPricesPage />} />
           <Route path="/client/profile" element={<ClientProfilePage />} />
         </Route>
 
@@ -105,6 +112,7 @@ function App() {
           <Route path="/employee/dashboard" element={<EmployeeDashboardHome />} />
           <Route path="/employee/clients" element={<ClientsManagement />} />
           <Route path="/employee/appointments" element={<AppointmentsManagement />} />
+          <Route path="/employee/fixed-prices" element={<EmployeeFixedPricesManagementPage />} />
           <Route path="/employee/profile" element={<EmployeeProfilePage />} />
         </Route>
 
