@@ -124,16 +124,31 @@ export default function JobApplicationsManagement() {
       setApplications(appsData);
       setFilteredApplications(appsData);
     } catch (error) {
-      console.error('Failed to fetch applications:', error);
-      console.error('Error response:', error.response);
       if (error.response?.status === 401) {
         removeToken();
         navigate('/admin/login');
+      } else if (error.response?.status === 404) {
+        // Endpoint not implemented - handle gracefully without showing error
+        setError('Job applications feature is not available yet.');
+        setApplications([]);
+        setFilteredApplications([]);
+      } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        // Network error - show warning but keep existing data if available
+        setError('Cannot connect to server. Please check your connection.');
+        if (applications.length === 0) {
+          setApplications([]);
+          setFilteredApplications([]);
+        }
       } else {
+        // Only log non-404, non-network errors
+        console.error('Failed to fetch applications:', error);
         setError('Failed to load job applications');
+        // Keep existing applications if available
+        if (applications.length === 0) {
+          setApplications([]);
+          setFilteredApplications([]);
+        }
       }
-      setApplications([]);
-      setFilteredApplications([]);
     } finally {
       setLoading(false);
     }

@@ -94,13 +94,19 @@ export default function NotificationBell() {
         }
       }
     } catch (error) {
-      // If endpoint doesn't exist (404), calculate from local notifications
+      // If endpoint doesn't exist (404), calculate from local notifications silently
       if (error.response?.status === 404) {
-        console.warn('Notifications endpoint not implemented in backend');
+        // Endpoint not implemented - handle silently, no console warnings
+        const localCount = notifications.filter(n => !n.read_at).length;
+        setUnreadCount(localCount);
+        setAllMarkedAsRead(localCount === 0);
+      } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        // Network error - use local count silently
         const localCount = notifications.filter(n => !n.read_at).length;
         setUnreadCount(localCount);
         setAllMarkedAsRead(localCount === 0);
       } else {
+        // Only log non-404, non-network errors
         console.error('Failed to fetch unread count:', error);
         // Fallback to local count
         const localCount = notifications.filter(n => !n.read_at).length;
@@ -150,15 +156,27 @@ export default function NotificationBell() {
         return merged;
       });
     } catch (error) {
-      // If endpoint doesn't exist (404), silently fail
+      // If endpoint doesn't exist (404), silently fail - no console warnings
       if (error.response?.status === 404) {
-        console.warn('Notifications endpoint not implemented in backend');
-        setNotifications([]);
-        setUnreadCount(0);
+        // Endpoint not implemented - keep existing notifications if available
+        if (notifications.length === 0) {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
+      } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        // Network error - keep existing notifications if available
+        if (notifications.length === 0) {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       } else {
+        // Only log non-404, non-network errors
         console.error('Failed to fetch notifications:', error);
-        setNotifications([]);
-        setUnreadCount(0);
+        // Keep existing notifications if available
+        if (notifications.length === 0) {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       }
     } finally {
       setLoading(false);
