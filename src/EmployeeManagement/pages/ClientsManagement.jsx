@@ -59,10 +59,10 @@ const statusColors = {
 };
 
 const statusLabels = {
-  pending: 'في الانتظار',
-  active: 'نشط',
-  suspended: 'معلق',
-  rejected: 'مرفوض',
+  pending: 'Pending',
+  active: 'Active',
+  suspended: 'Suspended',
+  rejected: 'Rejected',
 };
 
 const FilterCard = styled(Paper)({
@@ -185,7 +185,7 @@ export default function ClientsManagement() {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           error.message || 
-                          'فشل تحميل العملاء. يرجى المحاولة مرة أخرى.';
+                          'Failed to load clients. Please try again.';
       setError(errorMessage);
       setClients([]);
     } finally {
@@ -218,7 +218,7 @@ export default function ClientsManagement() {
       setDetailsDialogOpen(true);
     } catch (error) {
       console.error('Failed to fetch client details:', error);
-      setError('فشل تحميل تفاصيل العميل');
+      setError('Failed to load client details');
     }
   };
 
@@ -228,12 +228,12 @@ export default function ClientsManagement() {
       setActionLoading(true);
       setError('');
       await clientsService.activateClient(selectedClient.id);
-      setSuccess('تم تفعيل العميل بنجاح');
+      setSuccess('Client activated successfully');
       setActivateDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'فشل تفعيل العميل');
+      setError(error.response?.data?.message || 'Failed to activate client');
     } finally {
       setActionLoading(false);
     }
@@ -245,12 +245,12 @@ export default function ClientsManagement() {
       setActionLoading(true);
       setError('');
       await clientsService.rejectClient(selectedClient.id);
-      setSuccess('تم رفض العميل بنجاح');
+      setSuccess('Client rejected successfully');
       setRejectDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'فشل رفض العميل');
+      setError(error.response?.data?.message || 'Failed to reject client');
     } finally {
       setActionLoading(false);
     }
@@ -264,7 +264,7 @@ export default function ClientsManagement() {
       console.log('Suspending client:', selectedClient.id);
       const response = await clientsService.suspendClient(selectedClient.id);
       console.log('Suspend response:', response);
-      setSuccess('تم تعليق العميل بنجاح');
+      setSuccess('Client suspended successfully');
       setSuspendDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
@@ -274,7 +274,7 @@ export default function ClientsManagement() {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error ||
                           error.message || 
-                          'فشل تعليق العميل';
+                          'Failed to suspend client';
       setError(errorMessage);
     } finally {
       setActionLoading(false);
@@ -353,19 +353,19 @@ export default function ClientsManagement() {
       
       // Validation
       if (!formData.name || !formData.email) {
-        setError('الاسم والبريد الإلكتروني مطلوبان');
+        setError('Name and email are required');
         setActionLoading(false);
         return;
       }
 
       if (!isEditMode && (!formData.password || formData.password.length < 6)) {
-        setError('كلمة المرور مطلوبة ويجب أن تكون 6 أحرف على الأقل');
+        setError('Password is required and must be at least 6 characters');
         setActionLoading(false);
         return;
       }
 
       if (formData.password && formData.password !== formData.password_confirmation) {
-        setError('كلمات المرور غير متطابقة');
+        setError('Passwords do not match');
         setActionLoading(false);
         return;
       }
@@ -384,10 +384,10 @@ export default function ClientsManagement() {
 
       if (isEditMode && selectedClient) {
         await clientsService.updateClient(selectedClient.id, data);
-        setSuccess('تم تحديث العميل بنجاح');
+        setSuccess('Client updated successfully');
       } else {
         await clientsService.createClient(data);
-        setSuccess('تم إضافة العميل بنجاح');
+        setSuccess('Client added successfully');
       }
 
       setAddEditDialogOpen(false);
@@ -398,7 +398,7 @@ export default function ClientsManagement() {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.errors ? 
                           Object.values(error.response.data.errors).flat().join(', ') :
-                          (isEditMode ? 'فشل تحديث العميل' : 'فشل إضافة العميل');
+                          (isEditMode ? 'Failed to update client' : 'Failed to add client');
       setError(errorMessage);
     } finally {
       setActionLoading(false);
@@ -411,13 +411,13 @@ export default function ClientsManagement() {
       setActionLoading(true);
       setError('');
       await clientsService.forceDeleteClient(selectedClient.id);
-      setSuccess('تم حذف العميل بنجاح');
+      setSuccess('Client deleted successfully');
       setDeleteDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Delete error:', error);
-      setError(error.response?.data?.message || error.message || 'فشل حذف العميل');
+      setError(error.response?.data?.message || error.message || 'Failed to delete client');
     } finally {
       setActionLoading(false);
     }
@@ -429,12 +429,12 @@ export default function ClientsManagement() {
       setActionLoading(true);
       setError('');
       await clientsService.archiveClient(selectedClient.id);
-      setSuccess('تم أرشفة العميل بنجاح');
+      setSuccess('Client archived successfully');
       setArchiveDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'فشل أرشفة العميل');
+      setError(error.response?.data?.message || 'Failed to archive client');
     } finally {
       setActionLoading(false);
     }
@@ -446,12 +446,12 @@ export default function ClientsManagement() {
       setActionLoading(true);
       setError('');
       await clientsService.restoreClient(selectedClient.id);
-      setSuccess('تم إلغاء أرشفة العميل بنجاح');
+      setSuccess('Client unarchived successfully');
       setRestoreDialogOpen(false);
       await fetchClients();
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || 'فشل إلغاء أرشفة العميل');
+      setError(error.response?.data?.message || 'Failed to unarchive client');
     } finally {
       setActionLoading(false);
     }
@@ -475,20 +475,20 @@ export default function ClientsManagement() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold">
-              إدارة العملاء
+              Clients Management
             </Typography>
             <Typography variant="subtitle1" sx={{ color: '#ccc', mt: 1 }}>
-              إدارة وتنظيم جميع العملاء
+              Manage and organize all clients
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="تحديث">
+            <Tooltip title="Refresh">
               <IconButton onClick={fetchClients} sx={{ color: colors.gold }}>
                 <RefreshIcon />
               </IconButton>
             </Tooltip>
             <StyledButton startIcon={<AddIcon />} onClick={handleAddClient}>
-              إضافة عميل جديد
+              Add New Client
             </StyledButton>
           </Box>
         </Box>
@@ -521,7 +521,7 @@ export default function ClientsManagement() {
               {stats.total}
             </Typography>
             <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-              إجمالي العملاء
+              Total Clients
             </Typography>
           </Paper>
         </Grid>
@@ -538,7 +538,7 @@ export default function ClientsManagement() {
               {stats.pending}
             </Typography>
             <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-              في الانتظار
+              Pending
             </Typography>
           </Paper>
         </Grid>
@@ -555,7 +555,7 @@ export default function ClientsManagement() {
               {stats.active}
             </Typography>
             <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-              نشط
+              Active
             </Typography>
           </Paper>
         </Grid>
@@ -572,7 +572,7 @@ export default function ClientsManagement() {
               {stats.suspended}
             </Typography>
             <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-              معلق
+              Suspended
             </Typography>
           </Paper>
         </Grid>
@@ -589,7 +589,7 @@ export default function ClientsManagement() {
               {stats.rejected}
             </Typography>
             <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-              مرفوض
+              Rejected
             </Typography>
           </Paper>
         </Grid>
@@ -599,7 +599,7 @@ export default function ClientsManagement() {
       <FilterCard>
         <StyledTextField
           fullWidth
-          placeholder="ابحث عن عميل بالاسم أو البريد الإلكتروني..."
+          placeholder="Search for a client by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -621,12 +621,12 @@ export default function ClientsManagement() {
           '& .MuiTabs-indicator': { backgroundColor: colors.gold },
         }}
       >
-        <Tab label="الكل" />
-        <Tab label="في الانتظار" />
-        <Tab label="معتمد" />
-        <Tab label="معلق" />
-        <Tab label="مرفوض" />
-        <Tab label="أرشيف" />
+        <Tab label="All" />
+        <Tab label="Pending" />
+        <Tab label="Approved" />
+        <Tab label="Suspended" />
+        <Tab label="Rejected" />
+        <Tab label="Archive" />
       </Tabs>
 
       {/* Clients List */}
@@ -756,10 +756,10 @@ export default function ClientsManagement() {
                       onClick={() => handleViewDetails(client.id)}
                       sx={{ color: colors.gold }}
                     >
-                      عرض التفاصيل
+                      View Details
                     </Button>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="تعديل">
+                      <Tooltip title="Edit">
                         <IconButton
                           size="small"
                           onClick={() => handleMenuAction('edit', client)}
@@ -769,7 +769,7 @@ export default function ClientsManagement() {
                         </IconButton>
                       </Tooltip>
                       {!client.deleted_at && (
-                        <Tooltip title="أرشفة">
+                        <Tooltip title="Archive">
                           <IconButton
                             size="small"
                             onClick={() => handleMenuAction('archive', client)}
@@ -781,7 +781,7 @@ export default function ClientsManagement() {
                       )}
                       {client.deleted_at && (
                         <>
-                          <Tooltip title="إلغاء أرشفة">
+                          <Tooltip title="Unarchive">
                             <IconButton
                               size="small"
                               onClick={() => handleMenuAction('restore', client)}
@@ -791,7 +791,7 @@ export default function ClientsManagement() {
                             </IconButton>
                           </Tooltip>
                           {tab === 5 && (
-                            <Tooltip title="حذف">
+                            <Tooltip title="Delete">
                               <IconButton
                                 size="small"
                                 onClick={() => handleMenuAction('delete', client)}
@@ -805,7 +805,7 @@ export default function ClientsManagement() {
                       )}
                       {client.status === 'pending' && (
                         <>
-                          <Tooltip title="تفعيل">
+                          <Tooltip title="Activate">
                             <IconButton
                               size="small"
                               onClick={() => handleMenuAction('activate', client)}
@@ -814,7 +814,7 @@ export default function ClientsManagement() {
                               <CheckCircleIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="رفض">
+                          <Tooltip title="Reject">
                             <IconButton
                               size="small"
                               onClick={() => handleMenuAction('reject', client)}
@@ -826,7 +826,7 @@ export default function ClientsManagement() {
                         </>
                       )}
                       {client.status === 'active' && (
-                        <Tooltip title="تعليق">
+                        <Tooltip title="Suspend">
                           <IconButton
                             size="small"
                             onClick={() => handleMenuAction('suspend', client)}
@@ -863,9 +863,9 @@ export default function ClientsManagement() {
                   borderRadius: '12px',
                 }}
               >
-                <Typography variant="h6">لا يوجد عملاء</Typography>
+                <Typography variant="h6">No Clients</Typography>
                 <Typography variant="body2" sx={{ color: colors.textSecondary, mt: 1 }}>
-                  {searchTerm ? 'لا توجد نتائج تطابق البحث' : 'لا توجد عملاء في هذه الفئة'}
+                  {searchTerm ? 'No results match your search' : 'No clients in this category'}
                 </Typography>
               </Paper>
             </Grid>
@@ -894,7 +894,7 @@ export default function ClientsManagement() {
           sx={{ color: colors.white, '&:hover': { backgroundColor: alpha(colors.gold, 0.1) } }}
         >
           <VisibilityIcon sx={{ mr: 1, fontSize: 20 }} />
-          عرض التفاصيل
+          View Details
         </MenuItem>
         {clients.find((c) => c.id === menuClientId)?.status === 'pending' && (
           <>
@@ -961,7 +961,7 @@ export default function ClientsManagement() {
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
-            تفاصيل العميل
+            Client Details
           </Typography>
           <IconButton onClick={() => setDetailsDialogOpen(false)} sx={{ color: colors.white }}>
             <CloseIcon />
@@ -989,7 +989,7 @@ export default function ClientsManagement() {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                    الاسم
+                    Name
                   </Typography>
                   <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
                     {selectedClient.name}
@@ -997,7 +997,7 @@ export default function ClientsManagement() {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                    البريد الإلكتروني
+                    Email
                   </Typography>
                   <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
                     {selectedClient.email}
@@ -1007,7 +1007,7 @@ export default function ClientsManagement() {
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <PhoneIcon sx={{ fontSize: 16 }} />
-                      رقم الهاتف
+                      Phone Number
                     </Typography>
                     <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
                       {selectedClient.phone}
@@ -1018,7 +1018,7 @@ export default function ClientsManagement() {
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <LocationIcon sx={{ fontSize: 16 }} />
-                      العنوان
+                      Address
                     </Typography>
                     <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
                       {selectedClient.address}
@@ -1027,7 +1027,7 @@ export default function ClientsManagement() {
                 )}
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                    الحالة
+                    Status
                   </Typography>
                   <Chip
                     label={statusLabels[selectedClient.status] || selectedClient.status}
@@ -1038,7 +1038,7 @@ export default function ClientsManagement() {
                 {selectedClient.created_at && (
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-                      تاريخ التسجيل
+                      Registration Date
                     </Typography>
                     <Typography variant="body1" sx={{ color: colors.white, mb: 2 }}>
                       {new Date(selectedClient.created_at).toLocaleDateString('ar-SA', {
@@ -1055,12 +1055,12 @@ export default function ClientsManagement() {
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setDetailsDialogOpen(false)} sx={{ color: colors.textSecondary }}>
-            إغلاق
+            Close
           </Button>
           {selectedClient?.status === 'pending' && (
             <>
               <StyledButton onClick={() => setActivateDialogOpen(true)} sx={{ mr: 1 }}>
-                تفعيل
+                Activate
               </StyledButton>
               <Button
                 onClick={() => setRejectDialogOpen(true)}
@@ -1071,7 +1071,7 @@ export default function ClientsManagement() {
                 }}
                 variant="outlined"
               >
-                رفض
+                Reject
               </Button>
             </>
           )}
@@ -1085,11 +1085,11 @@ export default function ClientsManagement() {
               }}
               variant="outlined"
             >
-              تعليق
+              Suspend
             </Button>
           )}
           {selectedClient?.status === 'suspended' && (
-            <StyledButton onClick={() => setActivateDialogOpen(true)}>تفعيل</StyledButton>
+            <StyledButton onClick={() => setActivateDialogOpen(true)}>Activate</StyledButton>
           )}
         </DialogActions>
       </Dialog>
@@ -1099,8 +1099,8 @@ export default function ClientsManagement() {
         open={activateDialogOpen}
         onClose={() => setActivateDialogOpen(false)}
         onConfirm={handleActivate}
-        title="تفعيل العميل"
-        message={`هل أنت متأكد من تفعيل العميل "${selectedClient?.name}"؟`}
+        title="Activate Client"
+        message={`Are you sure you want to activate client "${selectedClient?.name}"?`}
         loading={actionLoading}
       />
 
@@ -1109,8 +1109,8 @@ export default function ClientsManagement() {
         open={rejectDialogOpen}
         onClose={() => setRejectDialogOpen(false)}
         onConfirm={handleReject}
-        title="رفض العميل"
-        message={`هل أنت متأكد من رفض العميل "${selectedClient?.name}"؟`}
+        title="Reject Client"
+        message={`Are you sure you want to reject client "${selectedClient?.name}"?`}
         loading={actionLoading}
       />
 
@@ -1119,8 +1119,8 @@ export default function ClientsManagement() {
         open={suspendDialogOpen}
         onClose={() => setSuspendDialogOpen(false)}
         onConfirm={handleSuspend}
-        title="تعليق العميل"
-        message={`هل أنت متأكد من تعليق العميل "${selectedClient?.name}"؟`}
+        title="Suspend Client"
+        message={`Are you sure you want to suspend client "${selectedClient?.name}"?`}
         loading={actionLoading}
       />
 
@@ -1151,7 +1151,7 @@ export default function ClientsManagement() {
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
-            {isEditMode ? 'تعديل العميل' : 'إضافة عميل جديد'}
+            {isEditMode ? 'Edit Client' : 'Add New Client'}
           </Typography>
           <IconButton onClick={() => {
             setAddEditDialogOpen(false);
@@ -1173,7 +1173,7 @@ export default function ClientsManagement() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <StyledTextField
               fullWidth
-              label="الاسم"
+              label="Name"
               name="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1181,7 +1181,7 @@ export default function ClientsManagement() {
             />
             <StyledTextField
               fullWidth
-              label="البريد الإلكتروني"
+              label="Email"
               name="email"
               type="email"
               value={formData.email}
@@ -1190,14 +1190,14 @@ export default function ClientsManagement() {
             />
             <StyledTextField
               fullWidth
-              label="رقم الهاتف"
+              label="Phone Number"
               name="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
             <StyledTextField
               fullWidth
-              label="العنوان"
+              label="Address"
               name="address"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -1208,7 +1208,7 @@ export default function ClientsManagement() {
               <>
                 <StyledTextField
                   fullWidth
-                  label="كلمة المرور"
+                  label="Password"
                   name="password"
                   type="password"
                   value={formData.password}
@@ -1217,7 +1217,7 @@ export default function ClientsManagement() {
                 />
                 <StyledTextField
                   fullWidth
-                  label="تأكيد كلمة المرور"
+                  label="Confirm Password"
                   name="password_confirmation"
                   type="password"
                   value={formData.password_confirmation}
@@ -1230,17 +1230,17 @@ export default function ClientsManagement() {
               <>
                 <StyledTextField
                   fullWidth
-                  label="كلمة المرور الجديدة (اختياري)"
+                  label="New Password (Optional)"
                   name="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  helperText="اتركه فارغاً إذا لم ترد تغيير كلمة المرور"
+                  helperText="Leave empty if you don't want to change the password"
                 />
                 {formData.password && (
                   <StyledTextField
                     fullWidth
-                    label="تأكيد كلمة المرور الجديدة"
+                    label="Confirm New Password"
                     name="password_confirmation"
                     type="password"
                     value={formData.password_confirmation}
@@ -1268,7 +1268,7 @@ export default function ClientsManagement() {
             }}
             sx={{ color: colors.textSecondary }}
           >
-            إلغاء
+            Cancel
           </Button>
           <StyledButton
             onClick={handleSaveClient}
@@ -1277,7 +1277,7 @@ export default function ClientsManagement() {
             {actionLoading ? (
               <CircularProgress size={24} sx={{ color: colors.black }} />
             ) : (
-              isEditMode ? 'تحديث' : 'إضافة'
+              isEditMode ? 'Update' : 'Add'
             )}
           </StyledButton>
         </DialogActions>
@@ -1288,8 +1288,8 @@ export default function ClientsManagement() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
-        title="حذف العميل"
-        message={`هل أنت متأكد من حذف العميل "${selectedClient?.name}"؟ هذا الإجراء لا يمكن التراجع عنه.`}
+        title="Delete Client"
+        message={`Are you sure you want to delete client "${selectedClient?.name}"? This action cannot be undone.`}
         loading={actionLoading}
       />
 
@@ -1298,8 +1298,8 @@ export default function ClientsManagement() {
         open={archiveDialogOpen}
         onClose={() => setArchiveDialogOpen(false)}
         onConfirm={handleArchive}
-        title="أرشفة العميل"
-        message={`هل أنت متأكد من أرشفة العميل "${selectedClient?.name}"؟`}
+        title="Archive Client"
+        message={`Are you sure you want to archive client "${selectedClient?.name}"?`}
         loading={actionLoading}
       />
 
@@ -1308,8 +1308,8 @@ export default function ClientsManagement() {
         open={restoreDialogOpen}
         onClose={() => setRestoreDialogOpen(false)}
         onConfirm={handleRestore}
-        title="إلغاء أرشفة العميل"
-        message={`هل أنت متأكد من إلغاء أرشفة العميل "${selectedClient?.name}"؟`}
+        title="Unarchive Client"
+        message={`Are you sure you want to unarchive client "${selectedClient?.name}"?`}
         loading={actionLoading}
       />
     </Box>

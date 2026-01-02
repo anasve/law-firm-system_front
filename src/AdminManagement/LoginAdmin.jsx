@@ -230,7 +230,7 @@ export default function LoginAdmin() {
             <AdminPanelSettingsIcon sx={{ fontSize: 40, color: colors.black }} />
           </Avatar>
           <Typography variant="h4" fontWeight="bold" fontFamily="Arial, sans-serif" sx={{ color: colors.white }}>
-            Admin Dashboard
+            Admin Login
           </Typography>
           <Typography variant="body1" sx={{ color: colors.gold }}>
             Lawyer Pro Platform

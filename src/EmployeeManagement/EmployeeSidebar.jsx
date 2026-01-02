@@ -126,7 +126,7 @@ export default function EmployeeSidebar() {
             <BusinessCenterOutlinedIcon sx={{ fontSize: 30, color: colors.black }} />
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
-            Employee Portal
+            Employee Dashboard
           </Typography>
         </Box>
         <NotificationBell />

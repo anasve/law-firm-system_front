@@ -22,7 +22,7 @@ export default function ConfirmationDialog({ open, onClose, onConfirm, title, me
         <Typography>{message}</Typography>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={loading} sx={{ color: colors.textLight }}>إلغاء</Button>
+        <Button onClick={onClose} disabled={loading} sx={{ color: colors.textLight }}>Cancel</Button>
         <Button 
           onClick={onConfirm} 
           variant="contained" 
@@ -32,7 +32,7 @@ export default function ConfirmationDialog({ open, onClose, onConfirm, title, me
             '&:hover': { bgcolor: '#B71C1C' } 
           }}
         >
-          {loading ? 'جاري المعالجة...' : 'تأكيد'}
+          {loading ? 'Processing...' : 'Confirm'}
         </Button>
       </DialogActions>
     </Dialog>

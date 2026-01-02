@@ -264,9 +264,9 @@ export default function HomePage() {
                 fontFamily: 'Arial, sans-serif',
               }}
             >
-              منصة قانونية متكاملة تربط بين العملاء والمحامين المحترفين
+              An integrated legal platform connecting clients with professional lawyers
               <br />
-              احصل على استشارات قانونية من أفضل المحامين في المنطقة
+              Get legal consultations from the best lawyers in the region
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
               <StyledButton
@@ -275,7 +275,7 @@ export default function HomePage() {
                 endIcon={<ArrowForwardIcon />}
                 onClick={handleRequestConsultation}
               >
-                طلب استشارة الآن
+                Request Consultation Now
               </StyledButton>
               <Button
                 variant="outlined"
@@ -293,7 +293,7 @@ export default function HomePage() {
                 }}
                 onClick={() => navigate('/login')}
               >
-                تسجيل الدخول
+                Login
               </Button>
             </Box>
           </Box>
@@ -312,7 +312,7 @@ export default function HomePage() {
             fontFamily: 'Arial, sans-serif',
           }}
         >
-          لماذا Lawyer Pro؟
+          Why Lawyer Pro?
         </Typography>
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
@@ -330,10 +330,10 @@ export default function HomePage() {
                   <PeopleIcon sx={{ fontSize: 40, color: colors.black }} />
                 </Avatar>
                 <Typography variant="h5" sx={{ color: colors.white, mb: 2, fontWeight: 'bold' }}>
-                  محامين محترفين
+                  Professional Lawyers
                 </Typography>
                 <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-                  فريق من المحامين المؤهلين والخبراء في مختلف التخصصات القانونية
+                  A team of qualified lawyers and experts in various legal specializations
                 </Typography>
               </CardContent>
             </SectionCard>
@@ -353,10 +353,10 @@ export default function HomePage() {
                   <GavelIcon sx={{ fontSize: 40, color: colors.black }} />
                 </Avatar>
                 <Typography variant="h5" sx={{ color: colors.white, mb: 2, fontWeight: 'bold' }}>
-                  استشارات سريعة
+                  Fast Consultations
                 </Typography>
                 <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-                  احصل على استشارات قانونية فورية من خلال منصتنا الآمنة والموثوقة
+                  Get instant legal consultations through our secure and reliable platform
                 </Typography>
               </CardContent>
             </SectionCard>
@@ -376,10 +376,10 @@ export default function HomePage() {
                   <DescriptionIcon sx={{ fontSize: 40, color: colors.black }} />
                 </Avatar>
                 <Typography variant="h5" sx={{ color: colors.white, mb: 2, fontWeight: 'bold' }}>
-                  مكتبة قانونية
+                  Legal Library
                 </Typography>
                 <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-                  تصفح مكتبة شاملة من القوانين والتشريعات القانونية
+                  Browse a comprehensive library of laws and legal legislation
                 </Typography>
               </CardContent>
             </SectionCard>
@@ -400,13 +400,13 @@ export default function HomePage() {
               fontFamily: 'Arial, sans-serif',
             }}
           >
-            محامونا المحترفون
+            Our Professional Lawyers
           </Typography>
 
           {/* Search and Filter */}
           <Box sx={{ mb: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <StyledTextField
-              placeholder="ابحث عن محامي..."
+              placeholder="Search for a lawyer..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               sx={{ flex: 1, minWidth: '250px' }}
@@ -493,7 +493,7 @@ export default function HomePage() {
                       }}
                       onClick={() => handleViewLawyer(lawyer.id)}
                     >
-                      عرض التفاصيل
+                      View Details
                     </Button>
                   </CardContent>
                 </SectionCard>
@@ -504,7 +504,7 @@ export default function HomePage() {
           {lawyers.length === 0 && !loading && (
             <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: colors.black }}>
               <Typography variant="h6" sx={{ color: colors.white }}>
-                لا يوجد محامين متاحين حالياً
+                No lawyers available at the moment
               </Typography>
             </Paper>
           )}
@@ -523,7 +523,7 @@ export default function HomePage() {
             fontFamily: 'Arial, sans-serif',
           }}
         >
-          مكتبة القوانين
+          Legal Library
         </Typography>
         <Grid container spacing={3}>
           {Array.isArray(laws) && laws.slice(0, 6).map((law) => (
@@ -558,7 +558,7 @@ export default function HomePage() {
                     }}
                     onClick={() => handleViewLaw(law.id)}
                   >
-                    قراءة المزيد
+                    Read More
                   </Button>
                 </CardContent>
               </SectionCard>
@@ -569,7 +569,7 @@ export default function HomePage() {
         {laws.length === 0 && !loading && (
           <Paper sx={{ p: 4, textAlign: 'center', backgroundColor: colors.lightBlack, mt: 4 }}>
             <Typography variant="h6" sx={{ color: colors.white }}>
-              لا توجد قوانين متاحة حالياً
+              No laws available at the moment
             </Typography>
           </Paper>
         )}
@@ -593,13 +593,13 @@ export default function HomePage() {
               fontFamily: 'Arial, sans-serif',
             }}
           >
-            جاهز لطلب استشارة قانونية؟
+            Ready to Request a Legal Consultation?
           </Typography>
           <Typography
             variant="h6"
             sx={{ color: colors.textSecondary, mb: 4 }}
           >
-            سجل الآن واحصل على استشارة من أفضل المحامين
+            Register now and get a consultation from the best lawyers
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
             <StyledButton
@@ -608,7 +608,7 @@ export default function HomePage() {
               endIcon={<ArrowForwardIcon />}
               onClick={handleRequestConsultation}
             >
-              إنشاء حساب الآن
+              Create Account Now
             </StyledButton>
             <Button
               variant="outlined"
@@ -645,7 +645,7 @@ export default function HomePage() {
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5" sx={{ color: colors.white, fontWeight: 'bold' }}>
-            تفاصيل المحامي
+            Lawyer Details
           </Typography>
           <IconButton onClick={() => setLawyerDialogOpen(false)} sx={{ color: colors.white }}>
             <CloseIcon />
@@ -700,10 +700,10 @@ export default function HomePage() {
             onClick={() => setLawyerDialogOpen(false)}
             sx={{ color: colors.textSecondary }}
           >
-            إغلاق
+            Close
           </Button>
           <StyledButton onClick={handleRequestConsultation}>
-            طلب استشارة
+            Request Consultation
           </StyledButton>
         </DialogActions>
       </Dialog>
@@ -723,7 +723,7 @@ export default function HomePage() {
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" component="div" sx={{ color: colors.white, fontWeight: 'bold' }}>
-            تفاصيل القانون
+            Law Details
           </Typography>
           <IconButton onClick={() => setLawDialogOpen(false)} sx={{ color: colors.white }}>
             <CloseIcon />
@@ -751,7 +751,7 @@ export default function HomePage() {
             onClick={() => setLawDialogOpen(false)}
             sx={{ color: colors.textSecondary }}
           >
-            إغلاق
+            Close
           </Button>
         </DialogActions>
       </Dialog>

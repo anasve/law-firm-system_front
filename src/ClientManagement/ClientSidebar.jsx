@@ -116,7 +116,7 @@ export default function ClientSidebar() {
             <PersonIcon sx={{ fontSize: 30, color: colors.black }} />
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
-            Client Portal
+            Client Dashboard
           </Typography>
         </Box>
         <NotificationBell />

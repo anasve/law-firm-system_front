@@ -135,7 +135,7 @@ export default function LawyerSidebar() {
             <GavelIcon sx={{ fontSize: 30, color: colors.black }} />
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
-            Lawyer Portal
+            Lawyer Dashboard
           </Typography>
         </Box>
         <NotificationBell />

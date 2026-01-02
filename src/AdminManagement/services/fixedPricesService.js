@@ -29,3 +29,5 @@ export const fixedPricesService = {
   forceDelete: (id) => api.delete(`/fixed-prices/${id}/force`),
 };
 
+
+

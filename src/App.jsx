@@ -19,6 +19,7 @@ import AdminDashboardHome from "./AdminManagement/pages/AdminDashboardHome";
 import LawsManagement from "./AdminManagement/pages/LawsManagement";
 import SpecializationsManagement from "./AdminManagement/pages/SpecializationsManagement";
 import JobApplicationsManagement from "./AdminManagement/pages/JobApplicationsManagement";
+import ProtectedRoute from "./AdminManagement/components/ProtectedRoute";
 
 // Client Pages
 import {
@@ -68,7 +69,14 @@ function App() {
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<LoginAdmin />} />
-        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute>
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          } 
+        />
         <Route element={<AdminLayout />}>
           <Route path="/dashboard" element={<AdminDashboardHome />} />
           <Route path="/lawyers" element={<LawyersManagement />} />

@@ -21,3 +21,5 @@ export const jobApplicationsService = {
   delete: (id) => api.delete(`/job-applications/${id}`),
 };
 
+
+
