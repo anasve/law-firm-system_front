@@ -452,6 +452,7 @@ export default function HomePage() {
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Avatar
+                        src={lawyer.photo}
                         sx={{
                           bgcolor: colors.gold,
                           width: 60,
@@ -656,6 +657,7 @@ export default function HomePage() {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <Avatar
+                  src={selectedLawyer.photo}
                   sx={{
                     bgcolor: colors.gold,
                     width: 80,

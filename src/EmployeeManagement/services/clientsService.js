@@ -8,8 +8,16 @@ export const clientsService = {
   getRejectedClients: () => api.get('/clients/rejected'),
   getSuspendedClients: () => api.get('/clients/suspended'),
   getArchivedClients: () => api.get('/clients/archived'),
-  createClient: (data) => api.post('/clients', data),
-  updateClient: (id, data) => api.put(`/clients/${id}`, data),
+  createClient: (data) => {
+    // If FormData, let axios set Content-Type automatically
+    const config = data instanceof FormData ? {} : {};
+    return api.post('/clients', data, config);
+  },
+  updateClient: (id, data) => {
+    // If FormData, let axios set Content-Type automatically
+    const config = data instanceof FormData ? {} : {};
+    return api.post(`/clients/${id}`, data, config);
+  },
   activateClient: (id) => api.post(`/clients/${id}/activate`),
   rejectClient: (id) => api.post(`/clients/${id}/reject`),
   suspendClient: (id) => api.post(`/clients/${id}/suspend`, {}),

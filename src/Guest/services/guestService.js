@@ -14,10 +14,14 @@ export const guestService = {
   getSpecialization: (id) => api.get(`/specializations/${id}`),
 
   // Job Applications
-  submitJobApplication: (formData) => api.post('/job-applications', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  }),
+  submitJobApplication: (formData) => {
+    // Don't set Content-Type header, let axios handle it automatically for FormData
+    const config = formData instanceof FormData ? {} : {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    return api.post('/job-applications', formData, config);
+  },
 };
 

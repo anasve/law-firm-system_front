@@ -115,6 +115,9 @@ export default function ProfileEdit() {
       alert("Changes saved successfully!");
       setPasswords({ current: "", new: "", confirm: "" });
       
+      // Dispatch event to update sidebar profile
+      window.dispatchEvent(new Event('profileUpdated'));
+      
       const refreshResponse = await api.get('/profile');
       const adminData = refreshResponse.data.data || refreshResponse.data.admin || refreshResponse.data || {};
       

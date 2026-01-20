@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   List,
@@ -20,9 +20,10 @@ import ChatIcon from '@mui/icons-material/Chat';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { api, removeToken, getToken } from './services/api';
+import { api, removeToken, getToken, API_BASE_URL_FULL } from './services/api';
 import { colors } from '../AdminManagement/constants';
 import NotificationBell from './components/NotificationBell';
+import { profileService } from './services/profileService';
 
 const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   borderRadius: '8px',
@@ -61,8 +62,47 @@ const menuItems = [
 
 export default function ClientSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
+  const [clientProfile, setClientProfile] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    fetchClientProfile();
+    
+    // Listen for profile update events
+    const handleProfileUpdate = () => {
+      fetchClientProfile();
+    };
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
+
+  const fetchClientProfile = async () => {
+    try {
+      const response = await profileService.getProfile();
+      const profileData = response.data?.data || response.data?.client || response.data || {};
+      setClientProfile({
+        name: profileData.name || '',
+        photo: profileData.photo || profileData.image || null,
+      });
+    } catch (error) {
+      console.error('Failed to fetch client profile:', error);
+    }
+  };
+
+  const getProfileImageUrl = () => {
+    if (!clientProfile?.photo) return null;
+    // If it's already a full URL, return as is
+    if (clientProfile.photo.startsWith('http')) {
+      return clientProfile.photo;
+    }
+    // Otherwise, build the full URL
+    return `${API_BASE_URL_FULL}${clientProfile.photo.replace(/^\/storage/, '/storage')}`;
+  };
 
   const isPathActive = (path) => {
     if (path === '/client/dashboard') {
@@ -112,8 +152,24 @@ export default function ClientSidebar() {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, mr: 2 }}>
-            <PersonIcon sx={{ fontSize: 30, color: colors.black }} />
+          <Avatar 
+            src={getProfileImageUrl()} 
+            sx={{ 
+              bgcolor: colors.gold, 
+              width: 48, 
+              height: 48, 
+              mr: 2,
+              border: `2px solid ${alpha(colors.gold, 0.3)}`,
+            }}
+          >
+            {!getProfileImageUrl() && (
+              <PersonIcon sx={{ fontSize: 30, color: colors.black }} />
+            )}
+            {getProfileImageUrl() && clientProfile?.name && (
+              <Typography sx={{ color: colors.black, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                {clientProfile.name.charAt(0).toUpperCase()}
+              </Typography>
+            )}
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
             Client Dashboard

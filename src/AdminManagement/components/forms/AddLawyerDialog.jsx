@@ -235,11 +235,11 @@ export default function AddLawyerDialog({ open, onClose, onSuccess }) {
         });
       }
       
-      // Handle files - use 'image' instead of 'photo' to match API
+      // Handle photo file
       if (form.photo && form.photo instanceof File) {
         // Validate it's an image before appending
         if (form.photo.type.startsWith('image/')) {
-          formData.append('image', form.photo);
+          formData.append('photo', form.photo);
         } else {
           showSnackbar('Photo must be a valid image file', 'error');
           setLoading(false);

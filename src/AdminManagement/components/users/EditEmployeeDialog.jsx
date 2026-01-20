@@ -53,7 +53,7 @@ const inputFieldStyles = {
 
 export default function EditEmployeeDialog({ open, onClose, employee, onSave }) {
   const [formData, setFormData] = useState({
-    name: '', age: '', email: '', password: '', password_confirmation: '', image: null
+    name: '', age: '', email: '', password: '', password_confirmation: '', photo: null
   });
   const [imagePreview, setImagePreview] = useState(null);
 
@@ -67,7 +67,7 @@ export default function EditEmployeeDialog({ open, onClose, employee, onSave }) 
         address: employee.address || '',
         password: '',
         password_confirmation: '',
-        image: null,
+        photo: null,
       });
       const imageUrl = buildImageUrl(employee.image_url || employee.photo || employee.image);
       setImagePreview(imageUrl);
@@ -84,7 +84,7 @@ export default function EditEmployeeDialog({ open, onClose, employee, onSave }) 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, image: file }));
+      setFormData(prev => ({ ...prev, photo: file }));
       setImagePreview(URL.createObjectURL(file));
     }
   };

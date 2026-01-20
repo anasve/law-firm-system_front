@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   List,
@@ -20,8 +20,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ClassIcon from '@mui/icons-material/Class';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PriceCheckIcon from '@mui/icons-material/PriceCheck';
+import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, removeToken, getToken } from './services/api';
+import { API_BASE_URL_FULL } from './constants/api';
 import { colors } from './constants';
 import NotificationBell from './components/notifications/NotificationBell';
 
@@ -62,8 +64,48 @@ const menuItems = [
 
 export default function GoldenSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
+  const [adminProfile, setAdminProfile] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    fetchAdminProfile();
+    
+    // Listen for profile update events
+    const handleProfileUpdate = () => {
+      fetchAdminProfile();
+    };
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
+
+  const fetchAdminProfile = async () => {
+    try {
+      const response = await api.get('/profile');
+      const profileData = response.data?.admin || response.data?.data || response.data || {};
+      setAdminProfile({
+        name: profileData.name || '',
+        photo: profileData.photo || null,
+      });
+    } catch (error) {
+      console.error('Failed to fetch admin profile:', error);
+    }
+  };
+
+  const getProfileImageUrl = () => {
+    if (!adminProfile?.photo) return null;
+    // If it's already a full URL, return as is
+    if (adminProfile.photo.startsWith('http')) {
+      return adminProfile.photo;
+    }
+    // Otherwise, build the full URL
+    const baseUrl = API_BASE_URL_FULL || 'http://localhost:8000';
+    return `${baseUrl.replace('/api', '')}${adminProfile.photo.startsWith('/') ? '' : '/'}${adminProfile.photo.replace(/^\/storage/, 'storage')}`;
+  };
 
   const isPathActive = (path) => {
     if (path === '/') {
@@ -127,11 +169,27 @@ export default function GoldenSidebar() {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <Avatar sx={{ bgcolor: colors.gold, width: 48, height: 48, mr: 2 }}>
-            <SchoolIcon sx={{ fontSize: 30, color: colors.black }} />
+          <Avatar 
+            src={getProfileImageUrl()} 
+            sx={{ 
+              bgcolor: colors.gold, 
+              width: 48, 
+              height: 48, 
+              mr: 2,
+              border: `2px solid ${alpha(colors.gold, 0.3)}`,
+            }}
+          >
+            {!getProfileImageUrl() && (
+              <SchoolIcon sx={{ fontSize: 30, color: colors.black }} />
+            )}
+            {getProfileImageUrl() && adminProfile?.name && (
+              <Typography sx={{ color: colors.black, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                {adminProfile.name.charAt(0).toUpperCase()}
+              </Typography>
+            )}
           </Avatar>
           <Typography variant="h6" fontWeight="bold" color={colors.white} fontFamily="Arial, sans-serif">
-            Lawyer Pro
+            Admin Dashboard
           </Typography>
         </Box>
         <NotificationBell />

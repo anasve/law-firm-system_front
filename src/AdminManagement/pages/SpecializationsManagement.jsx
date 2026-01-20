@@ -32,9 +32,27 @@ export default function SpecializationsManagement() {
   const fetchSpecializations = async () => {
     try {
       const response = await usersService.getSpecializations();
-      setSpecializations(Array.isArray(response.data) ? response.data : []);
+      let data = [];
+      
+      // Handle different response structures
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response.data && Array.isArray(response.data.specializations)) {
+        data = response.data.specializations;
+      } else if (Array.isArray(response)) {
+        data = response;
+      }
+      
+      // Filter out soft-deleted items (only show active)
+      data = data.filter(item => !item.deleted_at);
+      
+      setSpecializations(data);
+      console.log('Fetched specializations:', data.length, 'items');
     } catch (error) {
       console.error('Failed to fetch specializations:', error);
+      console.error('Error response:', error.response);
       setSpecializations([]);
       if (error.response?.status === 401) {
         removeToken();

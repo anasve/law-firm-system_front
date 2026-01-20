@@ -91,8 +91,8 @@ export default function EmployeesManagement() {
       apiData.append('password', editedEmployee.password);
       apiData.append('password_confirmation', editedEmployee.password_confirmation);
     }
-    if (editedEmployee.image && editedEmployee.image instanceof File) {
-      apiData.append('image', editedEmployee.image);
+    if (editedEmployee.photo && editedEmployee.photo instanceof File) {
+      apiData.append('photo', editedEmployee.photo);
     }
     apiData.append('_method', 'PUT');
 

@@ -44,7 +44,6 @@ export default function JobApplicationPage() {
   // Common fields
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     age: '',
     address: '',
@@ -76,18 +75,46 @@ export default function JobApplicationPage() {
 
   const fetchSpecializations = async () => {
     try {
+      console.log('Fetching specializations...');
       const response = await guestService.getSpecializations();
+      console.log('Specializations API response:', response);
+      console.log('Response data:', response.data);
+      
       let specsData = [];
+      
+      // Handle direct array (most common case)
       if (Array.isArray(response.data)) {
         specsData = response.data;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        console.log('Found direct array, count:', specsData.length);
+      } 
+      // Handle paginated response with data array
+      else if (response.data?.data && Array.isArray(response.data.data)) {
         specsData = response.data.data;
-      } else if (response.data?.specializations && Array.isArray(response.data.specializations)) {
+        console.log('Found paginated data array, count:', specsData.length);
+      } 
+      // Handle nested specializations
+      else if (response.data?.specializations && Array.isArray(response.data.specializations)) {
         specsData = response.data.specializations;
+        console.log('Found nested specializations, count:', specsData.length);
       }
+      
+      console.log('Final specializations data:', specsData);
+      console.log('Specializations count:', specsData.length);
+      
+      if (specsData.length === 0) {
+        console.warn('No specializations found in response!');
+      }
+      
       setSpecializations(specsData);
     } catch (error) {
       console.error('Failed to fetch specializations:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      setSpecializations([]);
     }
   };
 
@@ -98,7 +125,7 @@ export default function JobApplicationPage() {
     }
     if (activeStep === 1) {
       // Validate personal information
-      if (!formData.name || !formData.email || !formData.age) {
+      if (!formData.name || !formData.age) {
         setError('Please fill in all required fields');
         return;
       }
@@ -149,7 +176,7 @@ export default function JobApplicationPage() {
       setSuccess('');
 
       // Validate required fields before submission
-      if (!formData.name || !formData.email || !formData.age) {
+      if (!formData.name || !formData.age) {
         setError('Please fill in all required fields');
         setLoading(false);
         return;
@@ -172,7 +199,6 @@ export default function JobApplicationPage() {
       
       // Common fields
       formDataToSend.append('name', formData.name?.trim() || '');
-      formDataToSend.append('email', formData.email?.trim() || '');
       formDataToSend.append('phone', formData.phone?.trim() || '');
       formDataToSend.append('age', formData.age || '');
       formDataToSend.append('address', formData.address?.trim() || '');
@@ -194,7 +220,7 @@ export default function JobApplicationPage() {
         }
         formDataToSend.append('certificate', lawyerData.certificate);
         if (lawyerData.image) {
-          formDataToSend.append('image', lawyerData.image);
+          formDataToSend.append('photo', lawyerData.image);
         }
       } else if (applicationType === 'employee') {
         if (employeeData.experience_years) {
@@ -204,7 +230,7 @@ export default function JobApplicationPage() {
           formDataToSend.append('bio', employeeData.bio.trim());
         }
         if (employeeData.image) {
-          formDataToSend.append('image', employeeData.image);
+          formDataToSend.append('photo', employeeData.image);
         }
       }
 
@@ -218,27 +244,42 @@ export default function JobApplicationPage() {
       console.error('Application submission error:', error);
       console.error('Error response:', error.response);
       console.error('Error response data:', error.response?.data);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
       
       let errorMessage = 'Failed to submit application. Please try again.';
       
-      if (error.response?.status === 422) {
-        // Validation errors
-        const errors = error.response.data?.errors;
-        if (errors) {
-          const errorMessages = Object.entries(errors)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-            .join('\n');
-          errorMessage = errorMessages;
+      if (error.response) {
+        // Server responded with error
+        if (error.response.status === 422) {
+          // Validation errors
+          const errors = error.response.data?.errors;
+          if (errors) {
+            const errorMessages = Object.entries(errors)
+              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+              .join('\n');
+            errorMessage = errorMessages;
+          } else if (error.response.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+        } else if (error.response.status === 500) {
+          errorMessage = 'Server error occurred. Please check that all required fields are filled correctly and try again.';
+          if (error.response.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+          if (error.response.data?.error) {
+            errorMessage += '\nError: ' + error.response.data.error;
+          }
         } else if (error.response.data?.message) {
           errorMessage = error.response.data.message;
         }
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server error occurred. Please check that all required fields are filled correctly and try again.';
-        if (error.response?.data?.message) {
-          errorMessage = error.response.data.message;
-        }
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = 'Network error: Could not connect to server. Please check your internet connection and try again.';
+        console.error('No response received:', error.request);
+      } else {
+        // Something else happened
+        errorMessage = error.message || 'An unexpected error occurred. Please try again.';
       }
       
       setError(errorMessage);
@@ -326,17 +367,6 @@ export default function JobApplicationPage() {
               <Grid item xs={12} sm={6}>
                 <StyledTextField
                   fullWidth
-                  label="Email Address *"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <StyledTextField
-                  fullWidth
                   label="Phone Number"
                   name="phone"
                   value={formData.phone}
@@ -382,8 +412,11 @@ export default function JobApplicationPage() {
                   <FormControl fullWidth>
                     <InputLabel sx={{ color: colors.textSecondary }}>Specialization *</InputLabel>
                     <Select
-                      value={lawyerData.specialization_id}
-                      onChange={(e) => setLawyerData((prev) => ({ ...prev, specialization_id: e.target.value }))}
+                      value={lawyerData.specialization_id || ''}
+                      onChange={(e) => {
+                        console.log('Selected specialization:', e.target.value);
+                        setLawyerData((prev) => ({ ...prev, specialization_id: e.target.value }));
+                      }}
                       sx={{
                         color: colors.white,
                         '& .MuiOutlinedInput-notchedOutline': {
@@ -398,13 +431,24 @@ export default function JobApplicationPage() {
                       }}
                       required
                     >
-                      <MenuItem value="">Select Specialization</MenuItem>
-                      {specializations.map((spec) => (
-                        <MenuItem key={spec.id} value={spec.id}>
-                          {spec.name}
-                        </MenuItem>
-                      ))}
+                      <MenuItem value="">
+                        <em>Select Specialization</em>
+                      </MenuItem>
+                      {specializations && specializations.length > 0 ? (
+                        specializations.map((spec) => (
+                          <MenuItem key={spec.id} value={spec.id}>
+                            {spec.name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No specializations available</MenuItem>
+                      )}
                     </Select>
+                    {specializations.length === 0 && (
+                      <Typography variant="caption" sx={{ color: colors.gold, mt: 1, display: 'block' }}>
+                        Loading specializations...
+                      </Typography>
+                    )}
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -568,9 +612,6 @@ export default function JobApplicationPage() {
                 Name: {formData.name}
               </Typography>
               <Typography variant="body2" sx={{ color: colors.white, mb: 0.5 }}>
-                Email: {formData.email}
-              </Typography>
-              <Typography variant="body2" sx={{ color: colors.white, mb: 0.5 }}>
                 Phone: {formData.phone || 'N/A'}
               </Typography>
               <Typography variant="body2" sx={{ color: colors.white, mb: 0.5 }}>
@@ -691,4 +732,5 @@ export default function JobApplicationPage() {
     </Box>
   );
 }
+
 

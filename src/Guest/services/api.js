@@ -15,3 +15,15 @@ export const api = axios.create({
   timeout: 10000, // 10 seconds
 });
 
+// Add request interceptor to handle FormData
+api.interceptors.request.use(
+  (config) => {
+    // If data is FormData, remove Content-Type to let browser set it automatically with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+

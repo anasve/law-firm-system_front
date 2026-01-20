@@ -27,7 +27,8 @@ const UserCardStyled = styled(Card)({
 export default function UserCard({ user, type, onEdit, onArchive, onUnarchive, onView, onDelete, isArchivedView = false }) {
   const isLawyer = type === 'lawyer';
   const isArchived = isArchivedView;
-  const userImageUrl = buildImageUrl(user.image_url || user.photo || user.image);
+  // Priority: photo (URL from backend) > image_url > image > photo_path
+  const userImageUrl = buildImageUrl(user.photo || user.image_url || user.image || user.photo_path);
 
   return (
     <UserCardStyled>

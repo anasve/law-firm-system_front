@@ -102,8 +102,8 @@ export default function LawyersManagement() {
         apiData.append('specialization_ids[]', id);
       });
     }
-    if (editedLawyer.image && editedLawyer.image instanceof File) {
-      apiData.append('image', editedLawyer.image);
+    if (editedLawyer.photo && editedLawyer.photo instanceof File) {
+      apiData.append('photo', editedLawyer.photo);
     }
     if (editedLawyer.certificate && editedLawyer.certificate instanceof File) {
       apiData.append('certificate', editedLawyer.certificate);

@@ -99,7 +99,7 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
                 certificate: null,
               });
               
-              const imageUrl = buildImageUrl(lawyerData.image_url || lawyerData.photo || lawyerData.image);
+              const imageUrl = buildImageUrl(lawyerData.photo || lawyerData.image_url || lawyerData.image || lawyerData.photo_path);
               setImagePreview(imageUrl);
             }).catch(err => {
               console.error('Failed to fetch lawyer data:', err);
@@ -124,7 +124,7 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
                   certificate: null,
                 });
                 
-                const imageUrl = buildImageUrl(lawyer.image_url || lawyer.photo || lawyer.image);
+                const imageUrl = buildImageUrl(lawyer.photo || lawyer.image_url || lawyer.image || lawyer.photo_path);
                 setImagePreview(imageUrl);
               }
             }).finally(() => {
@@ -155,7 +155,7 @@ export default function EditLawyerDialog({ open, onClose, lawyer, onSave }) {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, image: file }));
+      setFormData(prev => ({ ...prev, photo: file }));
       setImagePreview(URL.createObjectURL(file));
     }
   };

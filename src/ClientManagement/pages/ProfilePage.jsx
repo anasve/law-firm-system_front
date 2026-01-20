@@ -86,6 +86,8 @@ export default function ProfilePage() {
       await profileService.updateProfile(profile);
       setSuccess('Profile updated successfully');
       await fetchProfile(); // Refresh profile after update
+      // Dispatch event to update sidebar profile image
+      window.dispatchEvent(new Event('profileUpdated'));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update profile');
     } finally {

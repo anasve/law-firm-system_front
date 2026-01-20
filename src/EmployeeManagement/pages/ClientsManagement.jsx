@@ -43,6 +43,7 @@ import {
   Unarchive as UnarchiveIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
@@ -101,7 +102,9 @@ export default function ClientsManagement() {
     address: '',
     password: '',
     password_confirmation: '',
+    photo: null,
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     fetchClients();
@@ -316,7 +319,9 @@ export default function ClientsManagement() {
           address: client.address || '',
           password: '',
           password_confirmation: '',
+          photo: null,
         });
+        setImagePreview(client.image || client.photo || null);
         setIsEditMode(true);
         setAddEditDialogOpen(true);
         break;
@@ -340,10 +345,30 @@ export default function ClientsManagement() {
       address: '',
       password: '',
       password_confirmation: '',
+      photo: null,
     });
+    setImagePreview(null);
     setIsEditMode(false);
     setSelectedClient(null);
     setAddEditDialogOpen(true);
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image size must be less than 2MB');
+        return;
+      }
+      setFormData(prev => ({ ...prev, photo: file }));
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSaveClient = async () => {
@@ -370,23 +395,33 @@ export default function ClientsManagement() {
         return;
       }
 
-      const data = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone?.trim() || '',
-        address: formData.address?.trim() || '',
-      };
+      // Use FormData to support file uploads
+      const apiData = new FormData();
+      apiData.append('name', formData.name.trim());
+      apiData.append('email', formData.email.trim());
+      if (formData.phone) {
+        apiData.append('phone', formData.phone.trim());
+      }
+      if (formData.address) {
+        apiData.append('address', formData.address.trim());
+      }
 
       if (formData.password) {
-        data.password = formData.password;
-        data.password_confirmation = formData.password_confirmation;
+        apiData.append('password', formData.password);
+        apiData.append('password_confirmation', formData.password_confirmation);
+      }
+
+      // Handle photo upload
+      if (formData.photo && formData.photo instanceof File) {
+        apiData.append('photo', formData.photo);
       }
 
       if (isEditMode && selectedClient) {
-        await clientsService.updateClient(selectedClient.id, data);
+        apiData.append('_method', 'PUT');
+        await clientsService.updateClient(selectedClient.id, apiData);
         setSuccess('Client updated successfully');
       } else {
-        await clientsService.createClient(data);
+        await clientsService.createClient(apiData);
         setSuccess('Client added successfully');
       }
 
@@ -1136,7 +1171,9 @@ export default function ClientsManagement() {
             address: '',
             password: '',
             password_confirmation: '',
+            photo: null,
           });
+          setImagePreview(null);
           setIsEditMode(false);
           setSelectedClient(null);
         }}
@@ -1162,7 +1199,9 @@ export default function ClientsManagement() {
               address: '',
               password: '',
               password_confirmation: '',
+              photo: null,
             });
+            setImagePreview(null);
             setIsEditMode(false);
             setSelectedClient(null);
           }} sx={{ color: colors.white }}>
@@ -1171,6 +1210,44 @@ export default function ClientsManagement() {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            {/* Photo Upload */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+              <Avatar
+                src={imagePreview}
+                sx={{
+                  width: 100,
+                  height: 100,
+                  bgcolor: colors.gold,
+                  mb: 1,
+                  border: `2px solid ${alpha(colors.gold, 0.3)}`,
+                }}
+              >
+                {!imagePreview && <PersonIcon sx={{ fontSize: 50 }} />}
+              </Avatar>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<PhotoCameraIcon />}
+                sx={{
+                  color: colors.gold,
+                  borderColor: colors.gold,
+                  '&:hover': {
+                    borderColor: colors.gold,
+                    backgroundColor: alpha(colors.gold, 0.1),
+                  },
+                }}
+              >
+                {imagePreview ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </Button>
+            </Box>
+            <Divider sx={{ borderColor: alpha(colors.gold, 0.2), my: 1 }} />
+            
             <StyledTextField
               fullWidth
               label="Name"

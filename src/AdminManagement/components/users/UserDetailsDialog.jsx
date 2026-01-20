@@ -62,7 +62,8 @@ export default function UserDetailsDialog({ open, onClose, user }) {
 
   const certificateUrl = displayData.certificate_url || displayData.certificate || null;
   const fullCertificateUrl = buildImageUrl(certificateUrl);
-  const imageUrl = buildImageUrl(displayData.image_url || displayData.photo || displayData.image);
+  // Priority: photo (URL from backend) > image_url > image > photo_path
+  const imageUrl = buildImageUrl(displayData.photo || displayData.image_url || displayData.image || displayData.photo_path);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: colors.lightBlack, color: colors.white, borderRadius: '16px', border: `1px solid ${alpha(colors.gold, 0.2)}` } }}>
